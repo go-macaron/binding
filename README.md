@@ -34,7 +34,7 @@ type ContactForm struct {
 }
 ```
 
-Then we simply add our route in Martini:
+Then we simply add our route in Macaron:
 
 ```go
 m.Post("/contact/submit", binding.Bind(ContactForm{}), func(contact ContactForm) string {
@@ -45,7 +45,7 @@ m.Post("/contact/submit", binding.Bind(ContactForm{}), func(contact ContactForm)
 
 That's it! The `binding.Bind` function takes care of validating required fields. If there are any errors (like a required field is empty), `binding` will return an error to the client and your app won't even see the request.
 
-(Caveat: Don't try to bind to embedded struct pointers; it won't work. See [issue 30](https://github.com/martini-contrib/binding/issues/30) if you want to help with this.)
+(Caveat: Don't try to bind to embedded struct pointers; it won't work. See [martini-contrib/binding issue 30](https://github.com/martini-contrib/binding/issues/30) if you want to help with this.)
 
 
 #### Getting JSON data from a request
@@ -137,7 +137,7 @@ type UploadForm struct {
 }
 
 func main() {
-	m := martini.Classic()
+	m := macaron.Classic()
 	m.Post("/", binding.MultipartForm(UploadForm{}), uploadHandler(uf UploadForm) string {
 		file, err := uf.TextUpload.Open()
 		// ... you can now read the uploaded file
@@ -160,9 +160,6 @@ Similar to `binding.Form`, no error handling is performed, but you can get the e
 `binding.Validate` receives a populated struct and checks it for errors, first by enforcing the `binding:"required"` value on struct field tags, then by executing the `Validate()` method on the struct, if it is a `binding.Validator`.
 
 *Note:* Marking a field as "required" means that you do not allow the zero value for that type (i.e. if you want to allow 0 in an int field, do not make it required).
-
-*Sanitizing:* If you'd like more powerful validation by sanitizing the input, take a look at [jamieomatthews/martini-validate](https://github.com/jamieomatthews/martini-validate) which has a few useful validate functions built-in.
-
 
 ### ErrorHandler
 
