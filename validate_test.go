@@ -201,6 +201,79 @@ var validationTestCases = []validationTestCase{
 			},
 		},
 	},
+	{
+		description: "List of invalid custom validations",
+		data: []SadForm{
+			SadForm{
+				AlphaDash:    ",",
+				AlphaDashDot: ",",
+				MinSize:      ",",
+				MinSizeSlice: []string{",", ","},
+				MaxSize:      ",,",
+				MaxSizeSlice: []string{",", ","},
+				Email:        ",",
+				Url:          ",",
+				UrlEmpty:     "",
+			},
+		},
+		expectedErrors: Errors{
+			Error{
+				FieldNames:     []string{"AlphaDash"},
+				Classification: "AlphaDashError",
+				Message:        "AlphaDash",
+			},
+			Error{
+				FieldNames:     []string{"AlphaDashDot"},
+				Classification: "AlphaDashDot",
+				Message:        "AlphaDashDot",
+			},
+			Error{
+				FieldNames:     []string{"MinSize"},
+				Classification: "MinSize",
+				Message:        "MinSize",
+			},
+			Error{
+				FieldNames:     []string{"MinSize"},
+				Classification: "MinSize",
+				Message:        "MinSize",
+			},
+			Error{
+				FieldNames:     []string{"MaxSize"},
+				Classification: "MaxSize",
+				Message:        "MaxSize",
+			},
+			Error{
+				FieldNames:     []string{"MaxSize"},
+				Classification: "MaxSize",
+				Message:        "MaxSize",
+			},
+			Error{
+				FieldNames:     []string{"Email"},
+				Classification: "Email",
+				Message:        "Email",
+			},
+			Error{
+				FieldNames:     []string{"Url"},
+				Classification: "Url",
+				Message:        "Url",
+			},
+		},
+	},
+	{
+		description: "List of valid custom validations",
+		data: []SadForm{
+			SadForm{
+				AlphaDash:    "123-456",
+				AlphaDashDot: "123.456",
+				MinSize:      "12345",
+				MinSizeSlice: []string{"1", "2", "3", "4", "5"},
+				MaxSize:      "1",
+				MaxSizeSlice: []string{"1"},
+				Email:        "123@456.com",
+				Url:          "http://123.456",
+			},
+		},
+	},
 }
 
 func TestValidation(t *testing.T) {

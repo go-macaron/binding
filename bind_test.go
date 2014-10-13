@@ -15,5 +15,6 @@ func TestBind(t *testing.T) {
 	}
 	for _, testCase := range fileTestCases {
 		performFileTest(t, Bind, testCase)
+		performFileTest(t, BindIgnErr, testCase)
 	}
 }

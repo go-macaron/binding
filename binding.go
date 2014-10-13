@@ -29,6 +29,30 @@ import (
 		And in this package BIND them.
 */
 
+func bind(ctx *macaron.Context, obj interface{}, ifacePtr ...interface{}) {
+	contentType := ctx.Req.Header.Get("Content-Type")
+
+	if ctx.Req.Method == "POST" || ctx.Req.Method == "PUT" || contentType != "" {
+		if strings.Contains(contentType, "form-urlencoded") {
+			ctx.Invoke(Form(obj, ifacePtr...))
+		} else if strings.Contains(contentType, "multipart/form-data") {
+			ctx.Invoke(MultipartForm(obj, ifacePtr...))
+		} else if strings.Contains(contentType, "json") {
+			ctx.Invoke(Json(obj, ifacePtr...))
+		} else {
+			var errors Errors
+			if contentType == "" {
+				errors.Add([]string{}, ContentTypeError, "Empty Content-Type")
+			} else {
+				errors.Add([]string{}, ContentTypeError, "Unsupported Content-Type")
+			}
+			ctx.Map(errors)
+		}
+	} else {
+		ctx.Invoke(Form(obj, ifacePtr...))
+	}
+}
+
 // Bind wraps up the functionality of the Form and Json middleware
 // according to the Content-Type and verb of the request.
 // A Content-Type is required for POST and PUT requests.
@@ -39,28 +63,7 @@ import (
 // a specific interface.
 func Bind(obj interface{}, ifacePtr ...interface{}) macaron.Handler {
 	return func(ctx *macaron.Context) {
-		contentType := ctx.Req.Header.Get("Content-Type")
-
-		if ctx.Req.Method == "POST" || ctx.Req.Method == "PUT" || contentType != "" {
-			if strings.Contains(contentType, "form-urlencoded") {
-				ctx.Invoke(Form(obj, ifacePtr...))
-			} else if strings.Contains(contentType, "multipart/form-data") {
-				ctx.Invoke(MultipartForm(obj, ifacePtr...))
-			} else if strings.Contains(contentType, "json") {
-				ctx.Invoke(Json(obj, ifacePtr...))
-			} else {
-				var errors Errors
-				if contentType == "" {
-					errors.Add([]string{}, ContentTypeError, "Empty Content-Type")
-				} else {
-					errors.Add([]string{}, ContentTypeError, "Unsupported Content-Type")
-				}
-				ctx.Map(errors)
-			}
-		} else {
-			ctx.Invoke(Form(obj, ifacePtr...))
-		}
-
+		bind(ctx, obj, ifacePtr...)
 		ctx.Invoke(ErrorHandler)
 	}
 }
@@ -70,27 +73,7 @@ func Bind(obj interface{}, ifacePtr ...interface{}) macaron.Handler {
 // This allows user take advantages of validation.
 func BindIgnErr(obj interface{}, ifacePtr ...interface{}) macaron.Handler {
 	return func(ctx *macaron.Context) {
-		contentType := ctx.Req.Header.Get("Content-Type")
-
-		if ctx.Req.Method == "POST" || ctx.Req.Method == "PUT" || contentType != "" {
-			if strings.Contains(contentType, "form-urlencoded") {
-				ctx.Invoke(Form(obj, ifacePtr...))
-			} else if strings.Contains(contentType, "multipart/form-data") {
-				ctx.Invoke(MultipartForm(obj, ifacePtr...))
-			} else if strings.Contains(contentType, "json") {
-				ctx.Invoke(Json(obj, ifacePtr...))
-			} else {
-				var errors Errors
-				if contentType == "" {
-					errors.Add([]string{}, ContentTypeError, "Empty Content-Type")
-				} else {
-					errors.Add([]string{}, ContentTypeError, "Unsupported Content-Type")
-				}
-				ctx.Map(errors)
-			}
-		} else {
-			ctx.Invoke(Form(obj, ifacePtr...))
-		}
+		bind(ctx, obj, ifacePtr...)
 	}
 }
 

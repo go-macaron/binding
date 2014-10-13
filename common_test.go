@@ -44,6 +44,18 @@ type (
 		*Person
 	}
 
+	SadForm struct {
+		AlphaDash    string   `form:"AlphaDash" binding:"AlphaDash"`
+		AlphaDashDot string   `form:"AlphaDashDot" binding:"AlphaDashDot"`
+		MinSize      string   `form:"MinSize" binding:"MinSize(5)"`
+		MinSizeSlice []string `form:"MinSizeSlice" binding:"MinSize(5)"`
+		MaxSize      string   `form:"MaxSize" binding:"MaxSize(1)"`
+		MaxSizeSlice []string `form:"MaxSizeSlice" binding:"MaxSize(1)"`
+		Email        string   `form:"Email" binding:"Email"`
+		Url          string   `form:"Url" binding:"Url"`
+		UrlEmpty     string   `form:"UrlEmpty" binding:"Url"`
+	}
+
 	// The common function signature of the handlers going under test.
 	handlerFunc func(interface{}, ...interface{}) macaron.Handler
 
