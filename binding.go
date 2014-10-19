@@ -145,9 +145,9 @@ func Json(jsonStruct interface{}, ifacePtr ...interface{}) macaron.Handler {
 		var errors Errors
 		ensureNotPointer(jsonStruct)
 		jsonStruct := reflect.New(reflect.TypeOf(jsonStruct))
-		if ctx.Req.Body != nil {
-			defer ctx.Req.Body.Close()
-			err := json.NewDecoder(ctx.Req.Body).Decode(jsonStruct.Interface())
+		if ctx.Req.Request.Body != nil {
+			defer ctx.Req.Request.Body.Close()
+			err := json.NewDecoder(ctx.Req.Request.Body).Decode(jsonStruct.Interface())
 			if err != nil && err != io.EOF {
 				errors.Add([]string{}, DeserializationError, err.Error())
 			}
