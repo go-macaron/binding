@@ -398,6 +398,11 @@ func setWithProperType(valueKind reflect.Kind, val string, structField reflect.V
 			structField.SetUint(uintVal)
 		}
 	case reflect.Bool:
+		if val == "on" {
+			structField.SetBool(true)
+			return
+		}
+
 		if val == "" {
 			val = "false"
 		}
@@ -406,8 +411,6 @@ func setWithProperType(valueKind reflect.Kind, val string, structField reflect.V
 			errors.Add([]string{nameInTag}, BooleanTypeError, "Value could not be parsed as boolean")
 		} else if boolVal {
 			structField.SetBool(true)
-		} else {
-			structField.SetBool(val == "on")
 		}
 	case reflect.Float32:
 		if val == "" {
