@@ -1,4 +1,18 @@
 // Copyright 2014 martini-contrib/binding Authors
+// Copyright 2014 Unknwon
+//
+// Licensed under the Apache License, Version 2.0 (the "License"): you may
+// not use this file except in compliance with the License. You may obtain
+// a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+
 package binding
 
 import (
@@ -9,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/Unknwon/macaron"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var fileTestCases = []fileTestCase{
@@ -51,10 +66,12 @@ var fileTestCases = []fileTestCase{
 	},
 }
 
-func TestFileUploads(t *testing.T) {
-	for _, testCase := range fileTestCases {
-		performFileTest(t, MultipartForm, testCase)
-	}
+func Test_FileUploads(t *testing.T) {
+	Convey("Test file upload", t, func() {
+		for _, testCase := range fileTestCases {
+			performFileTest(t, MultipartForm, testCase)
+		}
+	})
 }
 
 func performFileTest(t *testing.T, binder handlerFunc, testCase fileTestCase) {
@@ -63,11 +80,7 @@ func performFileTest(t *testing.T, binder handlerFunc, testCase fileTestCase) {
 
 	fileTestHandler := func(actual BlogPost, errs Errors) {
 		assertFileAsExpected(t, testCase, actual.HeaderImage, testCase.singleFile)
-
-		if len(testCase.multipleFiles) != len(actual.Pictures) {
-			t.Errorf("For '%s': Expected %d multiple files, but actually had %d instead",
-				testCase.description, len(testCase.multipleFiles), len(actual.Pictures))
-		}
+		So(len(testCase.multipleFiles), ShouldEqual, len(actual.Pictures))
 
 		for i, expectedFile := range testCase.multipleFiles {
 			if i >= len(actual.Pictures) {
@@ -97,26 +110,15 @@ func assertFileAsExpected(t *testing.T, testCase fileTestCase, actual *multipart
 	}
 
 	if expected != nil && actual == nil {
-		t.Errorf("For '%s': Expected to have a file, but didn't",
-			testCase.description)
+		So(actual, ShouldNotBeNil)
 		return
 	} else if expected == nil && actual != nil {
-		t.Errorf("For '%s': Did not expect a file, but ended up having one!",
-			testCase.description)
+		So(actual, ShouldBeNil)
 		return
 	}
 
-	if actual.Filename != expected.fileName {
-		t.Errorf("For '%s': expected file name to be '%s' but got '%s'",
-			testCase.description, expected.fileName, actual.Filename)
-	}
-
-	actualMultipleFileData := unpackFileHeaderData(actual)
-
-	if actualMultipleFileData != expected.data {
-		t.Errorf("For '%s': expected file data to be '%s' but got '%s'",
-			testCase.description, expected.data, actualMultipleFileData)
-	}
+	So(actual.Filename, ShouldEqual, expected.fileName)
+	So(unpackFileHeaderData(actual), ShouldEqual, expected.data)
 }
 
 func buildRequestWithFile(testCase fileTestCase) *http.Request {

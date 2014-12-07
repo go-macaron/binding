@@ -1,4 +1,18 @@
 // Copyright 2014 martini-contrib/binding Authors
+// Copyright 2014 Unknwon
+//
+// Licensed under the Apache License, Version 2.0 (the "License"): you may
+// not use this file except in compliance with the License. You may obtain
+// a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+
 package binding
 
 import (
@@ -11,6 +25,7 @@ import (
 	"testing"
 
 	"github.com/Unknwon/macaron"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var multipartFormTestCases = []multipartFormTestCase{
@@ -57,10 +72,12 @@ var multipartFormTestCases = []multipartFormTestCase{
 	},
 }
 
-func TestMultipartForm(t *testing.T) {
-	for _, testCase := range multipartFormTestCases {
-		performMultipartFormTest(t, MultipartForm, testCase)
-	}
+func Test_MultipartForm(t *testing.T) {
+	Convey("Test multipart form", t, func() {
+		for _, testCase := range multipartFormTestCases {
+			performMultipartFormTest(t, MultipartForm, testCase)
+		}
+	})
 }
 
 func performMultipartFormTest(t *testing.T, binder handlerFunc, testCase multipartFormTestCase) {
@@ -69,17 +86,11 @@ func performMultipartFormTest(t *testing.T, binder handlerFunc, testCase multipa
 
 	m.Post(testRoute, binder(BlogPost{}), func(actual BlogPost, errs Errors) {
 		if testCase.shouldSucceed && len(errs) > 0 {
-			t.Errorf("'%s' should have succeeded, but there were errors (%d):\n%+v",
-				testCase.description, len(errs), errs)
+			So(len(errs), ShouldEqual, 0)
 		} else if !testCase.shouldSucceed && len(errs) == 0 {
-			t.Errorf("'%s' should not have succeeded, but it did (there were no errors)", testCase.description)
+			So(len(errs), ShouldNotEqual, 0)
 		}
-		expString := fmt.Sprintf("%+v", testCase.inputAndExpected)
-		actString := fmt.Sprintf("%+v", actual)
-		if actString != expString {
-			t.Errorf("'%s': expected\n'%s'\nbut got\n'%s'",
-				testCase.description, expString, actString)
-		}
+		So(fmt.Sprintf("%+v", actual), ShouldEqual, fmt.Sprintf("%+v", testCase.inputAndExpected))
 	})
 
 	multipartPayload, mpWriter := makeMultipartPayload(testCase)

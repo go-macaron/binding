@@ -1,4 +1,18 @@
 // Copyright 2014 martini-contrib/binding Authors
+// Copyright 2014 Unknwon
+//
+// Licensed under the Apache License, Version 2.0 (the "License"): you may
+// not use this file except in compliance with the License. You may obtain
+// a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+
 package binding
 
 import (
@@ -6,6 +20,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var errorTestCases = []errorTestCase{
@@ -110,32 +126,25 @@ var errorTestCases = []errorTestCase{
 	},
 }
 
-func TestErrorHandler(t *testing.T) {
-	for _, testCase := range errorTestCases {
-		performErrorTest(t, testCase)
-	}
+func Test_ErrorHandler(t *testing.T) {
+	Convey("Error handler", t, func() {
+		for _, testCase := range errorTestCases {
+			performErrorTest(t, testCase)
+		}
+	})
 }
 
 func performErrorTest(t *testing.T, testCase errorTestCase) {
-	httpRecorder := httptest.NewRecorder()
+	resp := httptest.NewRecorder()
 
-	ErrorHandler(testCase.errors, httpRecorder)
+	ErrorHandler(testCase.errors, resp)
 
-	actualBody, _ := ioutil.ReadAll(httpRecorder.Body)
-	actualContentType := httpRecorder.Header().Get("Content-Type")
+	So(resp.Code, ShouldEqual, testCase.expected.statusCode)
+	So(resp.Header().Get("Content-Type"), ShouldEqual, testCase.expected.contentType)
 
-	if httpRecorder.Code != testCase.expected.statusCode {
-		t.Errorf("For '%s': expected status code %d but got %d instead",
-			testCase.description, testCase.expected.statusCode, httpRecorder.Code)
-	}
-	if actualContentType != testCase.expected.contentType {
-		t.Errorf("For '%s': expected content-type '%s' but got '%s' instead",
-			testCase.description, testCase.expected.contentType, actualContentType)
-	}
-	if string(actualBody) != testCase.expected.body {
-		t.Errorf("For '%s': expected body to be '%s' but got '%s' instead",
-			testCase.description, testCase.expected.body, actualBody)
-	}
+	actualBody, err := ioutil.ReadAll(resp.Body)
+	So(err, ShouldBeNil)
+	So(string(actualBody), ShouldEqual, testCase.expected.body)
 }
 
 type (

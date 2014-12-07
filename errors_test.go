@@ -1,78 +1,75 @@
 // Copyright 2014 martini-contrib/binding Authors
+// Copyright 2014 Unknwon
+//
+// Licensed under the Apache License, Version 2.0 (the "License"): you may
+// not use this file except in compliance with the License. You may obtain
+// a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+
 package binding
 
 import (
 	"fmt"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestErrorsAdd(t *testing.T) {
-	var actual Errors
-	expected := Errors{
-		Error{
-			FieldNames:     []string{"Field1", "Field2"},
-			Classification: "ErrorClass",
-			Message:        "Some message",
-		},
-	}
-
-	actual.Add(expected[0].FieldNames, expected[0].Classification, expected[0].Message)
-
-	if len(actual) != 1 {
-		t.Errorf("Expected 1 error, but actually had %d", len(actual))
-		return
-	}
-
-	expectedStr := fmt.Sprintf("%#v", expected)
-	actualStr := fmt.Sprintf("%#v", actual)
-
-	if actualStr != expectedStr {
-		t.Errorf("Expected:\n%s\nbut got:\n%s", expectedStr, actualStr)
-	}
-}
-
-func TestErrorsLen(t *testing.T) {
-	actual := errorsTestSet.Len()
-	expected := len(errorsTestSet)
-	if actual != expected {
-		t.Errorf("Expected %d, but got %d", expected, actual)
-		return
-	}
-}
-
-func TestErrorsHas(t *testing.T) {
-	if errorsTestSet.Has("ClassA") != true {
-		t.Errorf("Expected to have error of kind ClassA, but didn't")
-	}
-	if errorsTestSet.Has("ClassQ") != false {
-		t.Errorf("Expected to NOT have error of kind ClassQ, but did")
-	}
-}
-
-func TestErrorGetters(t *testing.T) {
-	err := Error{
-		FieldNames:     []string{"field1", "field2"},
-		Classification: "ErrorClass",
-		Message:        "The message",
-	}
-
-	fieldsActual := err.Fields()
-
-	if len(fieldsActual) != 2 {
-		t.Errorf("Expected Fields() to return 2 errors, but got %d", len(fieldsActual))
-	} else {
-		if fieldsActual[0] != "field1" || fieldsActual[1] != "field2" {
-			t.Errorf("Expected Fields() to return the correct fields, but it didn't")
+func Test_ErrorsAdd(t *testing.T) {
+	Convey("Add new error", t, func() {
+		var actual Errors
+		expected := Errors{
+			Error{
+				FieldNames:     []string{"Field1", "Field2"},
+				Classification: "ErrorClass",
+				Message:        "Some message",
+			},
 		}
-	}
 
-	if err.Kind() != "ErrorClass" {
-		t.Errorf("Expected the classification to be 'ErrorClass', but got '%s'", err.Kind())
-	}
+		actual.Add(expected[0].FieldNames, expected[0].Classification, expected[0].Message)
 
-	if err.Error() != "The message" {
-		t.Errorf("Expected the message to be 'The message', but got '%s'", err.Error())
-	}
+		So(len(actual), ShouldEqual, 1)
+		So(fmt.Sprintf("%#v", actual), ShouldEqual, fmt.Sprintf("%#v", expected))
+	})
+}
+
+func Test_ErrorsLen(t *testing.T) {
+	Convey("Get number of errors", t, func() {
+		So(errorsTestSet.Len(), ShouldEqual, len(errorsTestSet))
+	})
+}
+
+func Test_ErrorsHas(t *testing.T) {
+	Convey("Check error class", t, func() {
+		So(errorsTestSet.Has("ClassA"), ShouldBeTrue)
+		So(errorsTestSet.Has("ClassQ"), ShouldBeFalse)
+	})
+}
+
+func Test_ErrorGetters(t *testing.T) {
+	Convey("Get error detail", t, func() {
+		err := Error{
+			FieldNames:     []string{"field1", "field2"},
+			Classification: "ErrorClass",
+			Message:        "The message",
+		}
+
+		fieldsActual := err.Fields()
+
+		So(len(fieldsActual), ShouldEqual, 2)
+		So(fieldsActual[0], ShouldEqual, "field1")
+		So(fieldsActual[1], ShouldEqual, "field2")
+
+		So(err.Kind(), ShouldEqual, "ErrorClass")
+		So(err.Error(), ShouldEqual, "The message")
+	})
 }
 
 /*

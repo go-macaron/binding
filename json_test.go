@@ -1,4 +1,18 @@
 // Copyright 2014 martini-contrib/binding Authors
+// Copyright 2014 Unknwon
+//
+// Licensed under the Apache License, Version 2.0 (the "License"): you may
+// not use this file except in compliance with the License. You may obtain
+// a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+
 package binding
 
 import (
@@ -10,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/Unknwon/macaron"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var jsonTestCases = []jsonTestCase{
@@ -103,10 +118,12 @@ var jsonTestCases = []jsonTestCase{
 	},
 }
 
-func TestJson(t *testing.T) {
-	for _, testCase := range jsonTestCases {
-		performJsonTest(t, Json, testCase)
-	}
+func Test_Json(t *testing.T) {
+	Convey("Test JSON", t, func() {
+		for _, testCase := range jsonTestCases {
+			performJsonTest(t, Json, testCase)
+		}
+	})
 }
 
 func performJsonTest(t *testing.T, binder handlerFunc, testCase jsonTestCase) {
@@ -116,17 +133,11 @@ func performJsonTest(t *testing.T, binder handlerFunc, testCase jsonTestCase) {
 
 	jsonTestHandler := func(actual interface{}, errs Errors) {
 		if testCase.shouldSucceedOnJson && len(errs) > 0 {
-			t.Errorf("'%s' should have succeeded, but there were errors (%d):\n%+v",
-				testCase.description, len(errs), errs)
+			So(len(errs), ShouldEqual, 0)
 		} else if !testCase.shouldSucceedOnJson && len(errs) == 0 {
-			t.Errorf("'%s' should NOT have succeeded, but there were NO errors", testCase.description)
+			So(len(errs), ShouldNotEqual, 0)
 		}
-		expString := fmt.Sprintf("%+v", testCase.expected)
-		actString := fmt.Sprintf("%+v", actual)
-		if actString != expString {
-			t.Errorf("'%s': expected\n'%s'\nbut got\n'%s'",
-				testCase.description, expString, actString)
-		}
+		So(fmt.Sprintf("%+v", actual), ShouldEqual, fmt.Sprintf("%+v", testCase.expected))
 	}
 
 	switch testCase.expected.(type) {
@@ -135,10 +146,7 @@ func performJsonTest(t *testing.T, binder handlerFunc, testCase jsonTestCase) {
 			m.Post(testRoute, binder([]Post{}, (*modeler)(nil)), func(actual []Post, iface modeler, errs Errors) {
 
 				for _, a := range actual {
-					if a.Title != iface.Model() {
-						t.Errorf("For '%s': expected the struct to be mapped to the context as an interface",
-							testCase.description)
-					}
+					So(a.Title, ShouldEqual, iface.Model())
 					jsonTestHandler(a, errs)
 				}
 			})
@@ -151,10 +159,7 @@ func performJsonTest(t *testing.T, binder handlerFunc, testCase jsonTestCase) {
 	case Post:
 		if testCase.withInterface {
 			m.Post(testRoute, binder(Post{}, (*modeler)(nil)), func(actual Post, iface modeler, errs Errors) {
-				if actual.Title != iface.Model() {
-					t.Errorf("For '%s': expected the struct to be mapped to the context as an interface",
-						testCase.description)
-				}
+				So(actual.Title, ShouldEqual, iface.Model())
 				jsonTestHandler(actual, errs)
 			})
 		} else {
@@ -166,10 +171,7 @@ func performJsonTest(t *testing.T, binder handlerFunc, testCase jsonTestCase) {
 	case BlogPost:
 		if testCase.withInterface {
 			m.Post(testRoute, binder(BlogPost{}, (*modeler)(nil)), func(actual BlogPost, iface modeler, errs Errors) {
-				if actual.Title != iface.Model() {
-					t.Errorf("For '%s': expected the struct to be mapped to the context as an interface",
-						testCase.description)
-				}
+				So(actual.Title, ShouldEqual, iface.Model())
 				jsonTestHandler(actual, errs)
 			})
 		} else {
@@ -202,8 +204,7 @@ func performJsonTest(t *testing.T, binder handlerFunc, testCase jsonTestCase) {
 		if testCase.shouldSucceedOnJson &&
 			httpRecorder.Code != http.StatusOK &&
 			!testCase.shouldFailOnBind {
-			t.Errorf("'%s' should have succeeded (except when using Bind, where it should fail), but returned HTTP status %d with body '%s'",
-				testCase.description, httpRecorder.Code, httpRecorder.Body.String())
+			So(httpRecorder.Code, ShouldEqual, http.StatusOK)
 		}
 	}
 }

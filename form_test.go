@@ -1,4 +1,18 @@
 // Copyright 2014 martini-contrib/binding Authors
+// Copyright 2014 Unknwon
+//
+// Licensed under the Apache License, Version 2.0 (the "License"): you may
+// not use this file except in compliance with the License. You may obtain
+// a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations
+// under the License.
+
 package binding
 
 import (
@@ -10,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/Unknwon/macaron"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 var formTestCases = []formTestCase{
@@ -127,10 +142,12 @@ var formTestCases = []formTestCase{
 	},
 }
 
-func TestForm(t *testing.T) {
-	for _, testCase := range formTestCases {
-		performFormTest(t, Form, testCase)
-	}
+func Test_Form(t *testing.T) {
+	Convey("Test form", t, func() {
+		for _, testCase := range formTestCases {
+			performFormTest(t, Form, testCase)
+		}
+	})
 }
 
 func performFormTest(t *testing.T, binder handlerFunc, testCase formTestCase) {
@@ -139,16 +156,14 @@ func performFormTest(t *testing.T, binder handlerFunc, testCase formTestCase) {
 
 	formTestHandler := func(actual interface{}, errs Errors) {
 		if testCase.shouldSucceed && len(errs) > 0 {
-			t.Errorf("'%s' should have succeeded, but there were errors (%d):\n%+v",
-				testCase.description, len(errs), errs)
+			So(len(errs), ShouldEqual, 0)
 		} else if !testCase.shouldSucceed && len(errs) == 0 {
-			t.Errorf("'%s' should have had errors, but there were none", testCase.description)
+			So(len(errs), ShouldNotEqual, 0)
 		}
 		expString := fmt.Sprintf("%+v", testCase.expected)
 		actString := fmt.Sprintf("%+v", actual)
 		if actString != expString && !(testCase.deepEqual && reflect.DeepEqual(testCase.expected, actual)) {
-			t.Errorf("'%s': expected\n'%s'\nbut got\n'%s'",
-				testCase.description, expString, actString)
+			So(actString, ShouldEqual, expString)
 		}
 	}
 
@@ -156,10 +171,7 @@ func performFormTest(t *testing.T, binder handlerFunc, testCase formTestCase) {
 	case Post:
 		if testCase.withInterface {
 			m.Post(testRoute, binder(Post{}, (*modeler)(nil)), func(actual Post, iface modeler, errs Errors) {
-				if actual.Title != iface.Model() {
-					t.Errorf("For '%s': expected the struct to be mapped to the context as an interface",
-						testCase.description)
-				}
+				So(actual.Title, ShouldEqual, iface.Model())
 				formTestHandler(actual, errs)
 			})
 		} else {
@@ -174,10 +186,7 @@ func performFormTest(t *testing.T, binder handlerFunc, testCase formTestCase) {
 	case BlogPost:
 		if testCase.withInterface {
 			m.Post(testRoute, binder(BlogPost{}, (*modeler)(nil)), func(actual BlogPost, iface modeler, errs Errors) {
-				if actual.Title != iface.Model() {
-					t.Errorf("For '%s': expected the struct to be mapped to the context as an interface",
-						testCase.description)
-				}
+				So(actual.Title, ShouldEqual, iface.Model())
 				formTestHandler(actual, errs)
 			})
 		} else {

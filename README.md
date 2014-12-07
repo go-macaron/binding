@@ -1,4 +1,4 @@
-binding
+binding [![Build Status](https://drone.io/github.com/macaron-contrib/binding/status.png)](https://drone.io/github.com/macaron-contrib/binding/latest) [![](http://gocover.io/_badge/github.com/macaron-contrib/binding)](http://gocover.io/github.com/macaron-contrib/binding)
 =======
 
 Middlware binding provides request data binding and validation for [Macaron](https://github.com/Unknwon/macaron).
