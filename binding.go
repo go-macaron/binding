@@ -248,7 +248,7 @@ type (
 		// IsMatch checks if rule matches.
 		IsMatch func(string) bool
 		// IsValid applies validation rule to condition.
-		IsValid func(Errors) bool
+		IsValid func(Errors, interface{}) bool
 	}
 	// RuleMapper represents a validation rule mapper,
 	// it allwos users to add custom validation rules.
@@ -350,7 +350,7 @@ func validateStruct(errors Errors, obj interface{}) Errors {
 			default:
 				// Apply custom validation rules.
 				for i := range ruleMapper {
-					if ruleMapper[i].IsMatch(rule) && !ruleMapper[i].IsValid(errors) {
+					if ruleMapper[i].IsMatch(rule) && !ruleMapper[i].IsValid(errors, fieldValue) {
 						break
 					}
 				}
