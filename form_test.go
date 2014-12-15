@@ -156,7 +156,7 @@ func init() {
 		func(rule string) bool {
 			return rule == "CustomRule"
 		},
-		func(errs Errors, v interface{}) bool {
+		func(_ Errors, _ string, _ interface{}) bool {
 			return false
 		},
 	})
