@@ -42,12 +42,12 @@ type (
 	// and multiple file uploads
 	BlogPost struct {
 		Post
-		Id          int                     `form:"id" binding:"Required"` // JSON not specified here for test coverage
-		Ignored     string                  `form:"-" json:"-"`
-		Ratings     []int                   `form:"rating" json:"ratings"`
-		Author      Person                  `json:"author"`
-		Coauthor    *Person                 `json:"coauthor"`
-		HeaderImage *multipart.FileHeader   `form:"headerImage"`
+		Id          int     `binding:"Required"` // JSON not specified here for test coverage
+		Ignored     string  `form:"-" json:"-"`
+		Ratings     []int   `form:"rating" json:"ratings"`
+		Author      Person  `json:"author"`
+		Coauthor    *Person `json:"coauthor"`
+		HeaderImage *multipart.FileHeader
 		Pictures    []*multipart.FileHeader `form:"picture"`
 		unexported  string                  `form:"unexported"`
 	}
@@ -63,7 +63,7 @@ type (
 		MinSizeSlice []string `form:"MinSizeSlice" binding:"MinSize(5)"`
 		MaxSize      string   `form:"MaxSize" binding:"MaxSize(1)"`
 		MaxSizeSlice []string `form:"MaxSizeSlice" binding:"MaxSize(1)"`
-		Email        string   `form:"Email" binding:"Email"`
+		Email        string   `binding:"Email"`
 		Url          string   `form:"Url" binding:"Url"`
 		UrlEmpty     string   `form:"UrlEmpty" binding:"Url"`
 	}

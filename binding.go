@@ -33,7 +33,7 @@ import (
 
 // NOTE: last sync 1928ed2 on Aug 26, 2014.
 
-const _VERSION = "0.0.1"
+const _VERSION = "0.0.2"
 
 func Version() string {
 	return _VERSION
@@ -52,9 +52,9 @@ func bind(ctx *macaron.Context, obj interface{}, ifacePtr ...interface{}) {
 		default:
 			var errors Errors
 			if contentType == "" {
-				errors.Add([]string{}, ContentTypeError, "Empty Content-Type")
+				errors.Add([]string{}, ERR_CONTENT_TYPE, "Empty Content-Type")
 			} else {
-				errors.Add([]string{}, ContentTypeError, "Unsupported Content-Type")
+				errors.Add([]string{}, ERR_CONTENT_TYPE, "Unsupported Content-Type")
 			}
 			ctx.Map(errors)
 		}
@@ -77,18 +77,18 @@ const (
 // This is a "default" handler, of sorts, and you are
 // welcome to use your own instead. The Bind middleware
 // invokes this automatically for convenience.
-func errorHandler(errs Errors, resp http.ResponseWriter) {
+func errorHandler(errs Errors, rw http.ResponseWriter) {
 	if len(errs) > 0 {
-		resp.Header().Set("Content-Type", _JSON_CONTENT_TYPE)
-		if errs.Has(DeserializationError) {
-			resp.WriteHeader(http.StatusBadRequest)
-		} else if errs.Has(ContentTypeError) {
-			resp.WriteHeader(http.StatusUnsupportedMediaType)
+		rw.Header().Set("Content-Type", _JSON_CONTENT_TYPE)
+		if errs.Has(ERR_DESERIALIZATION) {
+			rw.WriteHeader(http.StatusBadRequest)
+		} else if errs.Has(ERR_CONTENT_TYPE) {
+			rw.WriteHeader(http.StatusUnsupportedMediaType)
 		} else {
-			resp.WriteHeader(STATUS_UNPROCESSABLE_ENTITY)
+			rw.WriteHeader(STATUS_UNPROCESSABLE_ENTITY)
 		}
 		errOutput, _ := json.Marshal(errs)
-		resp.Write(errOutput)
+		rw.Write(errOutput)
 		return
 	}
 }
@@ -143,12 +143,16 @@ func Form(formStruct interface{}, ifacePtr ...interface{}) macaron.Handler {
 		// Because an empty request body or url can also mean absence of all needed values,
 		// it is not in all cases a bad request, so let's return 422.
 		if parseErr != nil {
-			errors.Add([]string{}, DeserializationError, parseErr.Error())
+			errors.Add([]string{}, ERR_DESERIALIZATION, parseErr.Error())
 		}
 		mapForm(formStruct, ctx.Req.Form, nil, errors)
 		validateAndMap(formStruct, ctx, errors, ifacePtr...)
 	}
 }
+
+// Maximum amount of memory to use when parsing a multipart form.
+// Set this to whatever value you prefer; default is 10 MB.
+var MaxMemory = int64(1024 * 1024 * 10)
 
 // MultipartForm works much like Form, except it can parse multipart forms
 // and handle file uploads. Like the other deserialization middleware handlers,
@@ -165,11 +169,11 @@ func MultipartForm(formStruct interface{}, ifacePtr ...interface{}) macaron.Hand
 			// when content is not multipart; see https://code.google.com/p/go/issues/detail?id=6334
 			if multipartReader, err := ctx.Req.MultipartReader(); err != nil {
 				// TODO: Cover this and the next error check with tests
-				errors.Add([]string{}, DeserializationError, err.Error())
+				errors.Add([]string{}, ERR_DESERIALIZATION, err.Error())
 			} else {
 				form, parseErr := multipartReader.ReadForm(MaxMemory)
 				if parseErr != nil {
-					errors.Add([]string{}, DeserializationError, parseErr.Error())
+					errors.Add([]string{}, ERR_DESERIALIZATION, parseErr.Error())
 				}
 				ctx.Req.MultipartForm = form
 			}
@@ -193,7 +197,7 @@ func Json(jsonStruct interface{}, ifacePtr ...interface{}) macaron.Handler {
 			defer ctx.Req.Request.Body.Close()
 			err := json.NewDecoder(ctx.Req.Request.Body).Decode(jsonStruct.Interface())
 			if err != nil && err != io.EOF {
-				errors.Add([]string{}, DeserializationError, err.Error())
+				errors.Add([]string{}, ERR_DESERIALIZATION, err.Error())
 			}
 		}
 		validateAndMap(jsonStruct, ctx, errors, ifacePtr...)
@@ -292,48 +296,47 @@ func validateStruct(errors Errors, obj interface{}) Errors {
 				continue
 			}
 
-		RULE_CHECK:
 			switch {
 			case rule == "Required":
 				if reflect.DeepEqual(zero, fieldValue) {
-					errors.Add([]string{field.Name}, RequiredError, "Required")
+					errors.Add([]string{field.Name}, ERR_REQUIRED, "Required")
 					break
 				}
 			case rule == "AlphaDash":
 				if alphaDashPattern.MatchString(fmt.Sprintf("%v", fieldValue)) {
-					errors.Add([]string{field.Name}, AlphaDashError, "AlphaDash")
+					errors.Add([]string{field.Name}, ERR_ALPHA_DASH, "AlphaDash")
 					break
 				}
 			case rule == "AlphaDashDot":
 				if alphaDashDotPattern.MatchString(fmt.Sprintf("%v", fieldValue)) {
-					errors.Add([]string{field.Name}, AlphaDashDotError, "AlphaDashDot")
+					errors.Add([]string{field.Name}, ERR_ALPHA_DASH_DOT, "AlphaDashDot")
 					break
 				}
 			case strings.HasPrefix(rule, "MinSize("):
 				min, _ := strconv.Atoi(rule[8 : len(rule)-1])
 				if str, ok := fieldValue.(string); ok && utf8.RuneCountInString(str) < min {
-					errors.Add([]string{field.Name}, MinSizeError, "MinSize")
+					errors.Add([]string{field.Name}, ERR_MIN_SIZE, "MinSize")
 					break
 				}
 				v := reflect.ValueOf(fieldValue)
 				if v.Kind() == reflect.Slice && v.Len() < min {
-					errors.Add([]string{field.Name}, MinSizeError, "MinSize")
+					errors.Add([]string{field.Name}, ERR_MIN_SIZE, "MinSize")
 					break
 				}
 			case strings.HasPrefix(rule, "MaxSize("):
 				max, _ := strconv.Atoi(rule[8 : len(rule)-1])
 				if str, ok := fieldValue.(string); ok && utf8.RuneCountInString(str) > max {
-					errors.Add([]string{field.Name}, MaxSizeError, "MaxSize")
+					errors.Add([]string{field.Name}, ERR_MAX_SIZE, "MaxSize")
 					break
 				}
 				v := reflect.ValueOf(fieldValue)
 				if v.Kind() == reflect.Slice && v.Len() > max {
-					errors.Add([]string{field.Name}, MaxSizeError, "MaxSize")
+					errors.Add([]string{field.Name}, ERR_MAX_SIZE, "MaxSize")
 					break
 				}
 			case rule == "Email":
 				if !emailPattern.MatchString(fmt.Sprintf("%v", fieldValue)) {
-					errors.Add([]string{field.Name}, EmailError, "Email")
+					errors.Add([]string{field.Name}, ERR_EMAIL, "Email")
 					break
 				}
 			case rule == "Url":
@@ -341,20 +344,44 @@ func validateStruct(errors Errors, obj interface{}) Errors {
 				if len(str) == 0 {
 					continue
 				} else if !urlPattern.MatchString(str) {
-					errors.Add([]string{field.Name}, UrlError, "Url")
+					errors.Add([]string{field.Name}, ERR_URL, "Url")
 					break
 				}
 			default:
 				// Apply custom validation rules.
 				for i := range ruleMapper {
 					if ruleMapper[i].IsMatch(rule) && !ruleMapper[i].IsValid(errors) {
-						break RULE_CHECK
+						break
 					}
 				}
 			}
 		}
 	}
 	return errors
+}
+
+// NameMapper represents a form/json tag name mapper.
+type NameMapper func(string) string
+
+var (
+	nameMapper = func(field string) string {
+		newstr := make([]rune, 0, 10)
+		for i, chr := range field {
+			if isUpper := 'A' <= chr && chr <= 'Z'; isUpper {
+				if i > 0 {
+					newstr = append(newstr, '_')
+				}
+				chr -= ('A' - 'a')
+			}
+			newstr = append(newstr, chr)
+		}
+		return string(newstr)
+	}
+)
+
+// SetNameMapper sets name mapper.
+func SetNameMapper(nm NameMapper) {
+	nameMapper = nm
 }
 
 // Takes values from the form data and puts them into a struct
@@ -378,7 +405,13 @@ func mapForm(formStruct reflect.Value, form map[string][]string,
 			}
 		} else if typeField.Type.Kind() == reflect.Struct {
 			mapForm(structField, form, formfile, errors)
-		} else if inputFieldName := typeField.Tag.Get("form"); inputFieldName != "" {
+		}
+
+		inputFieldName := typeField.Tag.Get("form")
+		if len(inputFieldName) == 0 {
+			inputFieldName = nameMapper(typeField.Name)
+		}
+		if len(inputFieldName) > 0 {
 			if !structField.CanSet() {
 				continue
 			}
@@ -430,7 +463,7 @@ func setWithProperType(valueKind reflect.Kind, val string, structField reflect.V
 		}
 		intVal, err := strconv.ParseInt(val, 10, 64)
 		if err != nil {
-			errors.Add([]string{nameInTag}, IntegerTypeError, "Value could not be parsed as integer")
+			errors.Add([]string{nameInTag}, ERR_INTERGER_TYPE, "Value could not be parsed as integer")
 		} else {
 			structField.SetInt(intVal)
 		}
@@ -440,7 +473,7 @@ func setWithProperType(valueKind reflect.Kind, val string, structField reflect.V
 		}
 		uintVal, err := strconv.ParseUint(val, 10, 64)
 		if err != nil {
-			errors.Add([]string{nameInTag}, IntegerTypeError, "Value could not be parsed as unsigned integer")
+			errors.Add([]string{nameInTag}, ERR_INTERGER_TYPE, "Value could not be parsed as unsigned integer")
 		} else {
 			structField.SetUint(uintVal)
 		}
@@ -455,7 +488,7 @@ func setWithProperType(valueKind reflect.Kind, val string, structField reflect.V
 		}
 		boolVal, err := strconv.ParseBool(val)
 		if err != nil {
-			errors.Add([]string{nameInTag}, BooleanTypeError, "Value could not be parsed as boolean")
+			errors.Add([]string{nameInTag}, ERR_BOOLEAN_TYPE, "Value could not be parsed as boolean")
 		} else if boolVal {
 			structField.SetBool(true)
 		}
@@ -465,7 +498,7 @@ func setWithProperType(valueKind reflect.Kind, val string, structField reflect.V
 		}
 		floatVal, err := strconv.ParseFloat(val, 32)
 		if err != nil {
-			errors.Add([]string{nameInTag}, FloatTypeError, "Value could not be parsed as 32-bit float")
+			errors.Add([]string{nameInTag}, ERR_FLOAT_TYPE, "Value could not be parsed as 32-bit float")
 		} else {
 			structField.SetFloat(floatVal)
 		}
@@ -475,7 +508,7 @@ func setWithProperType(valueKind reflect.Kind, val string, structField reflect.V
 		}
 		floatVal, err := strconv.ParseFloat(val, 64)
 		if err != nil {
-			errors.Add([]string{nameInTag}, FloatTypeError, "Value could not be parsed as 64-bit float")
+			errors.Add([]string{nameInTag}, ERR_FLOAT_TYPE, "Value could not be parsed as 64-bit float")
 		} else {
 			structField.SetFloat(floatVal)
 		}
@@ -527,10 +560,4 @@ type (
 		// perform an actual credit card authorization here.
 		Validate(*macaron.Context, Errors) Errors
 	}
-)
-
-var (
-	// Maximum amount of memory to use when parsing a multipart form.
-	// Set this to whatever value you prefer; default is 10 MB.
-	MaxMemory = int64(1024 * 1024 * 10)
 )

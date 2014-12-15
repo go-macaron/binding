@@ -54,7 +54,7 @@ var validationTestCases = []validationTestCase{
 		expectedErrors: Errors{
 			Error{
 				FieldNames:     []string{"id"},
-				Classification: RequiredError,
+				Classification: ERR_REQUIRED,
 				Message:        "Required",
 			},
 		},
@@ -73,7 +73,7 @@ var validationTestCases = []validationTestCase{
 		expectedErrors: Errors{
 			Error{
 				FieldNames:     []string{"title"},
-				Classification: RequiredError,
+				Classification: ERR_REQUIRED,
 				Message:        "Required",
 			},
 			Error{
@@ -95,7 +95,7 @@ var validationTestCases = []validationTestCase{
 		expectedErrors: Errors{
 			Error{
 				FieldNames:     []string{"name"},
-				Classification: RequiredError,
+				Classification: ERR_REQUIRED,
 				Message:        "Required",
 			},
 		},
@@ -116,7 +116,7 @@ var validationTestCases = []validationTestCase{
 		expectedErrors: Errors{
 			Error{
 				FieldNames:     []string{"name"},
-				Classification: RequiredError,
+				Classification: ERR_REQUIRED,
 				Message:        "Required",
 			},
 		},

@@ -36,7 +36,7 @@ var errorTestCases = []errorTestCase{
 		description: "Deserialization error",
 		errors: Errors{
 			{
-				Classification: DeserializationError,
+				Classification: ERR_DESERIALIZATION,
 				Message:        "Some parser error here",
 			},
 		},
@@ -50,7 +50,7 @@ var errorTestCases = []errorTestCase{
 		description: "Content-Type error",
 		errors: Errors{
 			{
-				Classification: ContentTypeError,
+				Classification: ERR_CONTENT_TYPE,
 				Message:        "Empty Content-Type",
 			},
 		},
@@ -65,7 +65,7 @@ var errorTestCases = []errorTestCase{
 		errors: Errors{
 			{
 				FieldNames:     []string{"some_field"},
-				Classification: RequiredError,
+				Classification: ERR_REQUIRED,
 				Message:        "Required",
 			},
 		},
@@ -109,7 +109,7 @@ var errorTestCases = []errorTestCase{
 		errors: Errors{
 			{
 				FieldNames:     []string{"foo"},
-				Classification: RequiredError,
+				Classification: ERR_REQUIRED,
 				Message:        "Required",
 			},
 			{

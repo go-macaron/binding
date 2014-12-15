@@ -151,7 +151,7 @@ var formTestCases = []formTestCase{
 	},
 }
 
-func Test_Form(t *testing.T) {
+func init() {
 	AddRule(&Rule{
 		func(rule string) bool {
 			return rule == "CustomRule"
@@ -160,6 +160,10 @@ func Test_Form(t *testing.T) {
 			return false
 		},
 	})
+	SetNameMapper(nameMapper)
+}
+
+func Test_Form(t *testing.T) {
 	Convey("Test form", t, func() {
 		for _, testCase := range formTestCases {
 			performFormTest(t, Form, testCase)

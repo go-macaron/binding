@@ -126,7 +126,7 @@ func buildRequestWithFile(testCase fileTestCase) *http.Request {
 	w := multipart.NewWriter(b)
 
 	if testCase.singleFile != nil {
-		formFileSingle, err := w.CreateFormFile("headerImage", testCase.singleFile.fileName)
+		formFileSingle, err := w.CreateFormFile("header_image", testCase.singleFile.fileName)
 		if err != nil {
 			panic("Could not create FormFile (single file): " + err.Error())
 		}

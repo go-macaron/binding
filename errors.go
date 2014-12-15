@@ -15,6 +15,24 @@
 
 package binding
 
+const (
+	// Type mismatch errors.
+	ERR_CONTENT_TYPE    = "ContentTypeError"
+	ERR_DESERIALIZATION = "DeserializationError"
+	ERR_INTERGER_TYPE   = "IntegerTypeError"
+	ERR_BOOLEAN_TYPE    = "BooleanTypeError"
+	ERR_FLOAT_TYPE      = "FloatTypeError"
+
+	// Validation errors.
+	ERR_REQUIRED       = "RequiredError"
+	ERR_ALPHA_DASH     = "AlphaDashError"
+	ERR_ALPHA_DASH_DOT = "AlphaDashDotError"
+	ERR_MIN_SIZE       = "MinSizeError"
+	ERR_MAX_SIZE       = "MaxSizeError"
+	ERR_EMAIL          = "EmailError"
+	ERR_URL            = "UrlError"
+)
+
 type (
 	// Errors may be generated during deserialization, binding,
 	// or validation. This type is mapped to the context so you
@@ -132,19 +150,3 @@ func (e Error) Kind() string {
 func (e Error) Error() string {
 	return e.Message
 }
-
-const (
-	ContentTypeError     = "ContentTypeError"
-	DeserializationError = "DeserializationError"
-	IntegerTypeError     = "IntegerTypeError"
-	BooleanTypeError     = "BooleanTypeError"
-	FloatTypeError       = "FloatTypeError"
-
-	RequiredError     = "RequiredError"
-	AlphaDashError    = "AlphaDashError"
-	AlphaDashDotError = "AlphaDashDotError"
-	MinSizeError      = "MinSizeError"
-	MaxSizeError      = "MaxSizeError"
-	EmailError        = "EmailError"
-	UrlError          = "UrlError"
-)
