@@ -68,6 +68,10 @@ type (
 		UrlEmpty     string   `form:"UrlEmpty" binding:"Url"`
 	}
 
+	CustomErrorHandle struct {
+		Rule `binding:"CustomRule"`
+	}
+
 	// The common function signature of the handlers going under test.
 	handlerFunc func(interface{}, ...interface{}) macaron.Handler
 
@@ -95,6 +99,8 @@ func (p Post) Validate(ctx *macaron.Context, errs Errors) Errors {
 func (p Post) Model() string {
 	return p.Title
 }
+
+func (_ CustomErrorHandle) Error(_ *macaron.Context, _ Errors) {}
 
 const (
 	testRoute       = "/test"

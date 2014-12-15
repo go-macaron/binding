@@ -140,9 +140,26 @@ var formTestCases = []formTestCase{
 		payload:       ``,
 		expected:      EmbedPerson{nil},
 	},
+	{
+		description:   "Custom error handler",
+		shouldSucceed: true,
+		deepEqual:     true,
+		method:        "GET",
+		queryString:   "?",
+		payload:       ``,
+		expected:      CustomErrorHandle{},
+	},
 }
 
 func Test_Form(t *testing.T) {
+	AddRule(&Rule{
+		func(rule string) bool {
+			return rule == "CustomRule"
+		},
+		func(errs Errors) bool {
+			return false
+		},
+	})
 	Convey("Test form", t, func() {
 		for _, testCase := range formTestCases {
 			performFormTest(t, Form, testCase)
@@ -202,9 +219,13 @@ func performFormTest(t *testing.T, binder handlerFunc, testCase formTestCase) {
 		m.Get(testRoute, binder(EmbedPerson{}), func(actual EmbedPerson, errs Errors) {
 			formTestHandler(actual, errs)
 		})
+	case CustomErrorHandle:
+		m.Get(testRoute, binder(CustomErrorHandle{}), func(actual CustomErrorHandle, errs Errors) {
+			formTestHandler(actual, errs)
+		})
 	}
 
-	if testCase.method == "" {
+	if len(testCase.method) == 0 {
 		testCase.method = "POST"
 	}
 

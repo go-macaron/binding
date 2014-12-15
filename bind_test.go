@@ -49,3 +49,9 @@ func Test_Bind(t *testing.T) {
 		})
 	})
 }
+
+func Test_Version(t *testing.T) {
+	Convey("Get package version", t, func() {
+		So(Version(), ShouldEqual, _VERSION)
+	})
+}

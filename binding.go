@@ -33,25 +33,23 @@ import (
 
 // NOTE: last sync 1928ed2 on Aug 26, 2014.
 
-/*
-	For the land of Middle-ware Earth:
-		One func to rule them all,
-		One func to find them,
-		One func to bring them all,
-		And in this package BIND them.
-*/
+const _VERSION = "0.0.1"
+
+func Version() string {
+	return _VERSION
+}
 
 func bind(ctx *macaron.Context, obj interface{}, ifacePtr ...interface{}) {
 	contentType := ctx.Req.Header.Get("Content-Type")
-
-	if ctx.Req.Method == "POST" || ctx.Req.Method == "PUT" || contentType != "" {
-		if strings.Contains(contentType, "form-urlencoded") {
+	if ctx.Req.Method == "POST" || ctx.Req.Method == "PUT" || len(contentType) > 0 {
+		switch {
+		case strings.Contains(contentType, "form-urlencoded"):
 			ctx.Invoke(Form(obj, ifacePtr...))
-		} else if strings.Contains(contentType, "multipart/form-data") {
+		case strings.Contains(contentType, "multipart/form-data"):
 			ctx.Invoke(MultipartForm(obj, ifacePtr...))
-		} else if strings.Contains(contentType, "json") {
+		case strings.Contains(contentType, "json"):
 			ctx.Invoke(Json(obj, ifacePtr...))
-		} else {
+		default:
 			var errors Errors
 			if contentType == "" {
 				errors.Add([]string{}, ContentTypeError, "Empty Content-Type")
@@ -62,6 +60,36 @@ func bind(ctx *macaron.Context, obj interface{}, ifacePtr ...interface{}) {
 		}
 	} else {
 		ctx.Invoke(Form(obj, ifacePtr...))
+	}
+}
+
+const (
+	_JSON_CONTENT_TYPE          = "application/json; charset=utf-8"
+	STATUS_UNPROCESSABLE_ENTITY = 422
+)
+
+// errorHandler simply counts the number of errors in the
+// context and, if more than 0, writes a response with an
+// error code and a JSON payload describing the errors.
+// The response will have a JSON content-type.
+// Middleware remaining on the stack will not even see the request
+// if, by this point, there are any errors.
+// This is a "default" handler, of sorts, and you are
+// welcome to use your own instead. The Bind middleware
+// invokes this automatically for convenience.
+func errorHandler(errs Errors, resp http.ResponseWriter) {
+	if len(errs) > 0 {
+		resp.Header().Set("Content-Type", _JSON_CONTENT_TYPE)
+		if errs.Has(DeserializationError) {
+			resp.WriteHeader(http.StatusBadRequest)
+		} else if errs.Has(ContentTypeError) {
+			resp.WriteHeader(http.StatusUnsupportedMediaType)
+		} else {
+			resp.WriteHeader(STATUS_UNPROCESSABLE_ENTITY)
+		}
+		errOutput, _ := json.Marshal(errs)
+		resp.Write(errOutput)
+		return
 	}
 }
 
@@ -76,7 +104,11 @@ func bind(ctx *macaron.Context, obj interface{}, ifacePtr ...interface{}) {
 func Bind(obj interface{}, ifacePtr ...interface{}) macaron.Handler {
 	return func(ctx *macaron.Context) {
 		bind(ctx, obj, ifacePtr...)
-		ctx.Invoke(ErrorHandler)
+		if handler, ok := obj.(ErrorHandler); ok {
+			ctx.Invoke(handler.Error)
+		} else {
+			ctx.Invoke(errorHandler)
+		}
 	}
 }
 
@@ -206,6 +238,26 @@ var (
 	urlPattern          = regexp.MustCompile(`(http|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?`)
 )
 
+type (
+	// Rule represents a validation rule.
+	Rule struct {
+		// IsMatch checks if rule matches.
+		IsMatch func(string) bool
+		// IsValid applies validation rule to condition.
+		IsValid func(Errors) bool
+	}
+	// RuleMapper represents a validation rule mapper,
+	// it allwos users to add custom validation rules.
+	RuleMapper []*Rule
+)
+
+var ruleMapper RuleMapper
+
+// AddRule adds new validation rule.
+func AddRule(r *Rule) {
+	ruleMapper = append(ruleMapper, r)
+}
+
 // Performs required field checking on a struct
 func validateStruct(errors Errors, obj interface{}) Errors {
 	typ := reflect.TypeOf(obj)
@@ -240,6 +292,7 @@ func validateStruct(errors Errors, obj interface{}) Errors {
 				continue
 			}
 
+		RULE_CHECK:
 			switch {
 			case rule == "Required":
 				if reflect.DeepEqual(zero, fieldValue) {
@@ -290,6 +343,13 @@ func validateStruct(errors Errors, obj interface{}) Errors {
 				} else if !urlPattern.MatchString(str) {
 					errors.Add([]string{field.Name}, UrlError, "Url")
 					break
+				}
+			default:
+				// Apply custom validation rules.
+				for i := range ruleMapper {
+					if ruleMapper[i].IsMatch(rule) && !ruleMapper[i].IsValid(errors) {
+						break RULE_CHECK
+					}
 				}
 			}
 		}
@@ -355,31 +415,6 @@ func mapForm(formStruct reflect.Value, form map[string][]string,
 				structField.Set(reflect.ValueOf(inputFile[0]))
 			}
 		}
-	}
-}
-
-// ErrorHandler simply counts the number of errors in the
-// context and, if more than 0, writes a response with an
-// error code and a JSON payload describing the errors.
-// The response will have a JSON content-type.
-// Middleware remaining on the stack will not even see the request
-// if, by this point, there are any errors.
-// This is a "default" handler, of sorts, and you are
-// welcome to use your own instead. The Bind middleware
-// invokes this automatically for convenience.
-func ErrorHandler(errs Errors, resp http.ResponseWriter) {
-	if len(errs) > 0 {
-		resp.Header().Set("Content-Type", jsonContentType)
-		if errs.Has(DeserializationError) {
-			resp.WriteHeader(http.StatusBadRequest)
-		} else if errs.Has(ContentTypeError) {
-			resp.WriteHeader(http.StatusUnsupportedMediaType)
-		} else {
-			resp.WriteHeader(StatusUnprocessableEntity)
-		}
-		errOutput, _ := json.Marshal(errs)
-		resp.Write(errOutput)
-		return
 	}
 }
 
@@ -475,7 +510,13 @@ func getErrors(ctx *macaron.Context) Errors {
 }
 
 type (
-	// Implement the Validator interface to handle some rudimentary
+	// ErrorHandler is the interface that has custom error handling process.
+	ErrorHandler interface {
+		// Error handles validation errors with custom process.
+		Error(*macaron.Context, Errors)
+	}
+
+	// Validator is the interface that handles some rudimentary
 	// request validation logic so your application doesn't have to.
 	Validator interface {
 		// Validate validates that the request is OK. It is recommended
@@ -492,9 +533,4 @@ var (
 	// Maximum amount of memory to use when parsing a multipart form.
 	// Set this to whatever value you prefer; default is 10 MB.
 	MaxMemory = int64(1024 * 1024 * 10)
-)
-
-const (
-	jsonContentType           = "application/json; charset=utf-8"
-	StatusUnprocessableEntity = 422
 )

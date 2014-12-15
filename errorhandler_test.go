@@ -42,7 +42,7 @@ var errorTestCases = []errorTestCase{
 		},
 		expected: errorTestResult{
 			statusCode:  http.StatusBadRequest,
-			contentType: jsonContentType,
+			contentType: _JSON_CONTENT_TYPE,
 			body:        `[{"classification":"DeserializationError","message":"Some parser error here"}]`,
 		},
 	},
@@ -56,7 +56,7 @@ var errorTestCases = []errorTestCase{
 		},
 		expected: errorTestResult{
 			statusCode:  http.StatusUnsupportedMediaType,
-			contentType: jsonContentType,
+			contentType: _JSON_CONTENT_TYPE,
 			body:        `[{"classification":"ContentTypeError","message":"Empty Content-Type"}]`,
 		},
 	},
@@ -70,8 +70,8 @@ var errorTestCases = []errorTestCase{
 			},
 		},
 		expected: errorTestResult{
-			statusCode:  StatusUnprocessableEntity,
-			contentType: jsonContentType,
+			statusCode:  STATUS_UNPROCESSABLE_ENTITY,
+			contentType: _JSON_CONTENT_TYPE,
 			body:        `[{"fieldNames":["some_field"],"classification":"RequiredError","message":"Required"}]`,
 		},
 	},
@@ -84,8 +84,8 @@ var errorTestCases = []errorTestCase{
 			},
 		},
 		expected: errorTestResult{
-			statusCode:  StatusUnprocessableEntity,
-			contentType: jsonContentType,
+			statusCode:  STATUS_UNPROCESSABLE_ENTITY,
+			contentType: _JSON_CONTENT_TYPE,
 			body:        `[{"classification":"HeaderError","message":"The X-Something header must be specified"}]`,
 		},
 	},
@@ -99,8 +99,8 @@ var errorTestCases = []errorTestCase{
 			},
 		},
 		expected: errorTestResult{
-			statusCode:  StatusUnprocessableEntity,
-			contentType: jsonContentType,
+			statusCode:  STATUS_UNPROCESSABLE_ENTITY,
+			contentType: _JSON_CONTENT_TYPE,
 			body:        `[{"fieldNames":["month","year"],"classification":"DateError","message":"The month and year must be in the future"}]`,
 		},
 	},
@@ -119,8 +119,8 @@ var errorTestCases = []errorTestCase{
 			},
 		},
 		expected: errorTestResult{
-			statusCode:  StatusUnprocessableEntity,
-			contentType: jsonContentType,
+			statusCode:  STATUS_UNPROCESSABLE_ENTITY,
+			contentType: _JSON_CONTENT_TYPE,
 			body:        `[{"fieldNames":["foo"],"classification":"RequiredError","message":"Required"},{"fieldNames":["foo"],"classification":"LengthError","message":"The length of the 'foo' field is too short"}]`,
 		},
 	},
@@ -137,7 +137,7 @@ func Test_ErrorHandler(t *testing.T) {
 func performErrorTest(t *testing.T, testCase errorTestCase) {
 	resp := httptest.NewRecorder()
 
-	ErrorHandler(testCase.errors, resp)
+	errorHandler(testCase.errors, resp)
 
 	So(resp.Code, ShouldEqual, testCase.expected.statusCode)
 	So(resp.Header().Get("Content-Type"), ShouldEqual, testCase.expected.contentType)
