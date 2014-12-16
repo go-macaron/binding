@@ -29,8 +29,13 @@ const (
 	ERR_ALPHA_DASH_DOT = "AlphaDashDotError"
 	ERR_MIN_SIZE       = "MinSizeError"
 	ERR_MAX_SIZE       = "MaxSizeError"
+	ERR_RANGE          = "RangeError"
 	ERR_EMAIL          = "EmailError"
 	ERR_URL            = "UrlError"
+	ERR_IN             = "InError"
+	ERR_NOT_INT        = "NotInError"
+	ERR_INCLUDE        = "IncludeError"
+	ERR_EXCLUDE        = "ExcludeError"
 )
 
 type (

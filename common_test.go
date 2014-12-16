@@ -63,9 +63,16 @@ type (
 		MinSizeSlice []string `form:"MinSizeSlice" binding:"MinSize(5)"`
 		MaxSize      string   `form:"MaxSize" binding:"MaxSize(1)"`
 		MaxSizeSlice []string `form:"MaxSizeSlice" binding:"MaxSize(1)"`
+		Range        int      `form:"Range" binding:"Range(1,2)"`
+		RangeInvalid int      `form:"RangeInvalid" binding:"Range(1)"`
 		Email        string   `binding:"Email"`
 		Url          string   `form:"Url" binding:"Url"`
 		UrlEmpty     string   `form:"UrlEmpty" binding:"Url"`
+		In           string   `form:"In" binding:"In(1,2,3)"`
+		InInvalid    string   `form:"InInvalid" binding:"In(1,2,3)"`
+		NotIn        string   `form:"NotIn" binding:"NotIn(1,2,3)"`
+		Include      string   `form:"Include" binding:"Include(a)"`
+		Exclude      string   `form:"Exclude" binding:"Exclude(a)"`
 	}
 
 	CustomErrorHandle struct {

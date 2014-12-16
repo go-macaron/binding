@@ -28,12 +28,13 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/Unknwon/com"
 	"github.com/Unknwon/macaron"
 )
 
 // NOTE: last sync 1928ed2 on Aug 26, 2014.
 
-const _VERSION = "0.0.2"
+const _VERSION = "0.0.3"
 
 func Version() string {
 	return _VERSION
@@ -262,6 +263,19 @@ func AddRule(r *Rule) {
 	ruleMapper = append(ruleMapper, r)
 }
 
+func in(fieldValue interface{}, arr string) bool {
+	val := fmt.Sprintf("%v", fieldValue)
+	vals := strings.Split(arr, ",")
+	isIn := false
+	for _, v := range vals {
+		if v == val {
+			isIn = true
+			break
+		}
+	}
+	return isIn
+}
+
 // Performs required field checking on a struct
 func validateStruct(errors Errors, obj interface{}) Errors {
 	typ := reflect.TypeOf(obj)
@@ -334,6 +348,16 @@ func validateStruct(errors Errors, obj interface{}) Errors {
 					errors.Add([]string{field.Name}, ERR_MAX_SIZE, "MaxSize")
 					break
 				}
+			case strings.HasPrefix(rule, "Range("):
+				nums := strings.Split(rule[6:len(rule)-1], ",")
+				if len(nums) != 2 {
+					break
+				}
+				val := com.StrTo(fmt.Sprintf("%v", fieldValue)).MustInt()
+				if val < com.StrTo(nums[0]).MustInt() || val > com.StrTo(nums[1]).MustInt() {
+					errors.Add([]string{field.Name}, ERR_RANGE, "Range")
+					break
+				}
 			case rule == "Email":
 				if !emailPattern.MatchString(fmt.Sprintf("%v", fieldValue)) {
 					errors.Add([]string{field.Name}, ERR_EMAIL, "Email")
@@ -345,6 +369,26 @@ func validateStruct(errors Errors, obj interface{}) Errors {
 					continue
 				} else if !urlPattern.MatchString(str) {
 					errors.Add([]string{field.Name}, ERR_URL, "Url")
+					break
+				}
+			case strings.HasPrefix(rule, "In("):
+				if !in(fieldValue, rule[3:len(rule)-1]) {
+					errors.Add([]string{field.Name}, ERR_IN, "In")
+					break
+				}
+			case strings.HasPrefix(rule, "NotIn("):
+				if in(fieldValue, rule[6:len(rule)-1]) {
+					errors.Add([]string{field.Name}, ERR_NOT_INT, "NotIn")
+					break
+				}
+			case strings.HasPrefix(rule, "Include("):
+				if !strings.Contains(fmt.Sprintf("%v", fieldValue), rule[8:len(rule)-1]) {
+					errors.Add([]string{field.Name}, ERR_INCLUDE, "Include")
+					break
+				}
+			case strings.HasPrefix(rule, "Exclude("):
+				if strings.Contains(fmt.Sprintf("%v", fieldValue), rule[8:len(rule)-1]) {
+					errors.Add([]string{field.Name}, ERR_EXCLUDE, "Exclude")
 					break
 				}
 			default:
