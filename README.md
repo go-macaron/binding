@@ -3,8 +3,6 @@ binding [![Build Status](https://drone.io/github.com/macaron-contrib/binding/sta
 
 Middlware binding provides request data binding and validation for [Macaron](https://github.com/Unknwon/macaron).
 
-[API Reference](https://gowalker.org/github.com/macaron-contrib/binding)
-
 ### Installation
 
 	go get github.com/macaron-contrib/binding
