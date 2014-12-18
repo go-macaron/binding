@@ -34,7 +34,7 @@ import (
 
 // NOTE: last sync 1928ed2 on Aug 26, 2014.
 
-const _VERSION = "0.0.3"
+const _VERSION = "0.0.4"
 
 func Version() string {
 	return _VERSION
@@ -169,7 +169,6 @@ func MultipartForm(formStruct interface{}, ifacePtr ...interface{}) macaron.Hand
 			// Workaround for multipart forms returning nil instead of an error
 			// when content is not multipart; see https://code.google.com/p/go/issues/detail?id=6334
 			if multipartReader, err := ctx.Req.MultipartReader(); err != nil {
-				// TODO: Cover this and the next error check with tests
 				errors.Add([]string{}, ERR_DESERIALIZATION, err.Error())
 			} else {
 				form, parseErr := multipartReader.ReadForm(MaxMemory)
@@ -276,6 +275,13 @@ func in(fieldValue interface{}, arr string) bool {
 	return isIn
 }
 
+func parseFormName(raw, actual string) string {
+	if len(actual) > 0 {
+		return actual
+	}
+	return nameMapper(raw)
+}
+
 // Performs required field checking on a struct
 func validateStruct(errors Errors, obj interface{}) Errors {
 	typ := reflect.TypeOf(obj)
@@ -294,7 +300,8 @@ func validateStruct(errors Errors, obj interface{}) Errors {
 			continue
 		}
 
-		fieldValue := val.Field(i).Interface()
+		fieldVal := val.Field(i)
+		fieldValue := fieldVal.Interface()
 		zero := reflect.Zero(field.Type).Interface()
 
 		// Validate nested and embedded structs (if pointer, only do so if not nil)
@@ -391,6 +398,15 @@ func validateStruct(errors Errors, obj interface{}) Errors {
 					errors.Add([]string{field.Name}, ERR_EXCLUDE, "Exclude")
 					break VALIDATE_RULES
 				}
+			case strings.HasPrefix(rule, "Default("):
+				if reflect.DeepEqual(zero, fieldValue) {
+					if fieldVal.CanAddr() {
+						setWithProperType(field.Type.Kind(), rule[8:len(rule)-1], fieldVal, field.Tag.Get("form"), errors)
+					} else {
+						errors.Add([]string{field.Name}, ERR_EXCLUDE, "Default")
+						break VALIDATE_RULES
+					}
+				}
 			default:
 				// Apply custom validation rules.
 				for i := range ruleMapper {
@@ -451,10 +467,7 @@ func mapForm(formStruct reflect.Value, form map[string][]string,
 			mapForm(structField, form, formfile, errors)
 		}
 
-		inputFieldName := typeField.Tag.Get("form")
-		if len(inputFieldName) == 0 {
-			inputFieldName = nameMapper(typeField.Name)
-		}
+		inputFieldName := parseFormName(typeField.Name, typeField.Tag.Get("form"))
 		if len(inputFieldName) > 0 {
 			if !structField.CanSet() {
 				continue

@@ -262,3 +262,21 @@ type (
 		method        string
 	}
 )
+
+type defaultForm struct {
+	Default string `binding:"Default(hello world)"`
+}
+
+func Test_Default(t *testing.T) {
+	Convey("Test default value", t, func() {
+		m := macaron.Classic()
+		m.Get("/", Bind(defaultForm{}), func(f defaultForm) {
+			So(f.Default, ShouldEqual, "hello world")
+		})
+		resp := httptest.NewRecorder()
+		req, err := http.NewRequest("GET", "/", nil)
+		So(err, ShouldBeNil)
+
+		m.ServeHTTP(resp, req)
+	})
+}

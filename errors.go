@@ -36,6 +36,7 @@ const (
 	ERR_NOT_INT        = "NotInError"
 	ERR_INCLUDE        = "IncludeError"
 	ERR_EXCLUDE        = "ExcludeError"
+	ERR_DEFAULT        = "DefaultError"
 )
 
 type (

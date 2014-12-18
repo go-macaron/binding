@@ -230,7 +230,6 @@ var validationTestCases = []validationTestCase{
 				Email:        ",",
 				Url:          ",",
 				UrlEmpty:     "",
-				In:           "1",
 				InInvalid:    "4",
 				NotIn:        "1",
 				Include:      "def",
@@ -282,6 +281,11 @@ var validationTestCases = []validationTestCase{
 				FieldNames:     []string{"Url"},
 				Classification: "Url",
 				Message:        "Url",
+			},
+			Error{
+				FieldNames:     []string{"Default"},
+				Classification: "Default",
+				Message:        "Default",
 			},
 			Error{
 				FieldNames:     []string{"InInvalid"},
