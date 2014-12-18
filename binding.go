@@ -304,7 +304,7 @@ func validateStruct(errors Errors, obj interface{}) Errors {
 			errors = validateStruct(errors, fieldValue)
 		}
 
-		// Match rules.
+	VALIDATE_RULES:
 		for _, rule := range strings.Split(field.Tag.Get("binding"), ";") {
 			if len(rule) == 0 {
 				continue
@@ -314,54 +314,54 @@ func validateStruct(errors Errors, obj interface{}) Errors {
 			case rule == "Required":
 				if reflect.DeepEqual(zero, fieldValue) {
 					errors.Add([]string{field.Name}, ERR_REQUIRED, "Required")
-					break
+					break VALIDATE_RULES
 				}
 			case rule == "AlphaDash":
 				if alphaDashPattern.MatchString(fmt.Sprintf("%v", fieldValue)) {
 					errors.Add([]string{field.Name}, ERR_ALPHA_DASH, "AlphaDash")
-					break
+					break VALIDATE_RULES
 				}
 			case rule == "AlphaDashDot":
 				if alphaDashDotPattern.MatchString(fmt.Sprintf("%v", fieldValue)) {
 					errors.Add([]string{field.Name}, ERR_ALPHA_DASH_DOT, "AlphaDashDot")
-					break
+					break VALIDATE_RULES
 				}
 			case strings.HasPrefix(rule, "MinSize("):
 				min, _ := strconv.Atoi(rule[8 : len(rule)-1])
 				if str, ok := fieldValue.(string); ok && utf8.RuneCountInString(str) < min {
 					errors.Add([]string{field.Name}, ERR_MIN_SIZE, "MinSize")
-					break
+					break VALIDATE_RULES
 				}
 				v := reflect.ValueOf(fieldValue)
 				if v.Kind() == reflect.Slice && v.Len() < min {
 					errors.Add([]string{field.Name}, ERR_MIN_SIZE, "MinSize")
-					break
+					break VALIDATE_RULES
 				}
 			case strings.HasPrefix(rule, "MaxSize("):
 				max, _ := strconv.Atoi(rule[8 : len(rule)-1])
 				if str, ok := fieldValue.(string); ok && utf8.RuneCountInString(str) > max {
 					errors.Add([]string{field.Name}, ERR_MAX_SIZE, "MaxSize")
-					break
+					break VALIDATE_RULES
 				}
 				v := reflect.ValueOf(fieldValue)
 				if v.Kind() == reflect.Slice && v.Len() > max {
 					errors.Add([]string{field.Name}, ERR_MAX_SIZE, "MaxSize")
-					break
+					break VALIDATE_RULES
 				}
 			case strings.HasPrefix(rule, "Range("):
 				nums := strings.Split(rule[6:len(rule)-1], ",")
 				if len(nums) != 2 {
-					break
+					break VALIDATE_RULES
 				}
 				val := com.StrTo(fmt.Sprintf("%v", fieldValue)).MustInt()
 				if val < com.StrTo(nums[0]).MustInt() || val > com.StrTo(nums[1]).MustInt() {
 					errors.Add([]string{field.Name}, ERR_RANGE, "Range")
-					break
+					break VALIDATE_RULES
 				}
 			case rule == "Email":
 				if !emailPattern.MatchString(fmt.Sprintf("%v", fieldValue)) {
 					errors.Add([]string{field.Name}, ERR_EMAIL, "Email")
-					break
+					break VALIDATE_RULES
 				}
 			case rule == "Url":
 				str := fmt.Sprintf("%v", fieldValue)
@@ -369,33 +369,33 @@ func validateStruct(errors Errors, obj interface{}) Errors {
 					continue
 				} else if !urlPattern.MatchString(str) {
 					errors.Add([]string{field.Name}, ERR_URL, "Url")
-					break
+					break VALIDATE_RULES
 				}
 			case strings.HasPrefix(rule, "In("):
 				if !in(fieldValue, rule[3:len(rule)-1]) {
 					errors.Add([]string{field.Name}, ERR_IN, "In")
-					break
+					break VALIDATE_RULES
 				}
 			case strings.HasPrefix(rule, "NotIn("):
 				if in(fieldValue, rule[6:len(rule)-1]) {
 					errors.Add([]string{field.Name}, ERR_NOT_INT, "NotIn")
-					break
+					break VALIDATE_RULES
 				}
 			case strings.HasPrefix(rule, "Include("):
 				if !strings.Contains(fmt.Sprintf("%v", fieldValue), rule[8:len(rule)-1]) {
 					errors.Add([]string{field.Name}, ERR_INCLUDE, "Include")
-					break
+					break VALIDATE_RULES
 				}
 			case strings.HasPrefix(rule, "Exclude("):
 				if strings.Contains(fmt.Sprintf("%v", fieldValue), rule[8:len(rule)-1]) {
 					errors.Add([]string{field.Name}, ERR_EXCLUDE, "Exclude")
-					break
+					break VALIDATE_RULES
 				}
 			default:
 				// Apply custom validation rules.
 				for i := range ruleMapper {
 					if ruleMapper[i].IsMatch(rule) && !ruleMapper[i].IsValid(errors, field.Name, fieldValue) {
-						break
+						break VALIDATE_RULES
 					}
 				}
 			}
