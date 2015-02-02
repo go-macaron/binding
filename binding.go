@@ -420,12 +420,12 @@ func validateStruct(errors Errors, obj interface{}) Errors {
 	return errors
 }
 
-// NameMapper represents a form/json tag name mapper.
+// NameMapper represents a form tag name mapper.
 type NameMapper func(string) string
 
 var (
 	nameMapper = func(field string) string {
-		newstr := make([]rune, 0, 10)
+		newstr := make([]rune, 0, len(field))
 		for i, chr := range field {
 			if isUpper := 'A' <= chr && chr <= 'Z'; isUpper {
 				if i > 0 {
@@ -468,42 +468,40 @@ func mapForm(formStruct reflect.Value, form map[string][]string,
 		}
 
 		inputFieldName := parseFormName(typeField.Name, typeField.Tag.Get("form"))
-		if len(inputFieldName) > 0 {
-			if !structField.CanSet() {
-				continue
-			}
+		if len(inputFieldName) == 0 || !structField.CanSet() {
+			continue
+		}
 
-			inputValue, exists := form[inputFieldName]
-			if exists {
-				numElems := len(inputValue)
-				if structField.Kind() == reflect.Slice && numElems > 0 {
-					sliceOf := structField.Type().Elem().Kind()
-					slice := reflect.MakeSlice(structField.Type(), numElems, numElems)
-					for i := 0; i < numElems; i++ {
-						setWithProperType(sliceOf, inputValue[i], slice.Index(i), inputFieldName, errors)
-					}
-					formStruct.Field(i).Set(slice)
-				} else {
-					setWithProperType(typeField.Type.Kind(), inputValue[0], structField, inputFieldName, errors)
-				}
-				continue
-			}
-
-			inputFile, exists := formfile[inputFieldName]
-			if !exists {
-				continue
-			}
-			fhType := reflect.TypeOf((*multipart.FileHeader)(nil))
-			numElems := len(inputFile)
-			if structField.Kind() == reflect.Slice && numElems > 0 && structField.Type().Elem() == fhType {
+		inputValue, exists := form[inputFieldName]
+		if exists {
+			numElems := len(inputValue)
+			if structField.Kind() == reflect.Slice && numElems > 0 {
+				sliceOf := structField.Type().Elem().Kind()
 				slice := reflect.MakeSlice(structField.Type(), numElems, numElems)
 				for i := 0; i < numElems; i++ {
-					slice.Index(i).Set(reflect.ValueOf(inputFile[i]))
+					setWithProperType(sliceOf, inputValue[i], slice.Index(i), inputFieldName, errors)
 				}
-				structField.Set(slice)
-			} else if structField.Type() == fhType {
-				structField.Set(reflect.ValueOf(inputFile[0]))
+				formStruct.Field(i).Set(slice)
+			} else {
+				setWithProperType(typeField.Type.Kind(), inputValue[0], structField, inputFieldName, errors)
 			}
+			continue
+		}
+
+		inputFile, exists := formfile[inputFieldName]
+		if !exists {
+			continue
+		}
+		fhType := reflect.TypeOf((*multipart.FileHeader)(nil))
+		numElems := len(inputFile)
+		if structField.Kind() == reflect.Slice && numElems > 0 && structField.Type().Elem() == fhType {
+			slice := reflect.MakeSlice(structField.Type(), numElems, numElems)
+			for i := 0; i < numElems; i++ {
+				slice.Index(i).Set(reflect.ValueOf(inputFile[i]))
+			}
+			structField.Set(slice)
+		} else if structField.Type() == fhType {
+			structField.Set(reflect.ValueOf(inputFile[0]))
 		}
 	}
 }
