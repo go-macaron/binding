@@ -34,7 +34,7 @@ import (
 
 // NOTE: last sync 1928ed2 on Aug 26, 2014.
 
-const _VERSION = "0.0.4"
+const _VERSION = "0.0.5"
 
 func Version() string {
 	return _VERSION
@@ -58,6 +58,7 @@ func bind(ctx *macaron.Context, obj interface{}, ifacePtr ...interface{}) {
 				errors.Add([]string{}, ERR_CONTENT_TYPE, "Unsupported Content-Type")
 			}
 			ctx.Map(errors)
+			ctx.Map(obj) // Map a fake struct so handler won't panic.
 		}
 	} else {
 		ctx.Invoke(Form(obj, ifacePtr...))
