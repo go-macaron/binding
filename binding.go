@@ -34,7 +34,7 @@ import (
 
 // NOTE: last sync 1928ed2 on Aug 26, 2014.
 
-const _VERSION = "0.0.5"
+const _VERSION = "0.0.6"
 
 func Version() string {
 	return _VERSION
@@ -319,6 +319,10 @@ func validateStruct(errors Errors, obj interface{}) Errors {
 			}
 
 			switch {
+			case rule == "OmitEmpty":
+				if reflect.DeepEqual(zero, fieldValue) {
+					break VALIDATE_RULES
+				}
 			case rule == "Required":
 				if reflect.DeepEqual(zero, fieldValue) {
 					errors.Add([]string{field.Name}, ERR_REQUIRED, "Required")

@@ -73,6 +73,7 @@ type (
 		NotIn        string   `form:"NotIn" binding:"NotIn(1,2,3)"`
 		Include      string   `form:"Include" binding:"Include(a)"`
 		Exclude      string   `form:"Exclude" binding:"Exclude(a)"`
+		Empty        string   `binding:"OmitEmpty"`
 	}
 
 	CustomErrorHandle struct {
