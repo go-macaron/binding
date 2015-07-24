@@ -59,6 +59,8 @@ type (
 	SadForm struct {
 		AlphaDash    string   `form:"AlphaDash" binding:"AlphaDash"`
 		AlphaDashDot string   `form:"AlphaDashDot" binding:"AlphaDashDot"`
+		Size         string   `form:"Size" binding:"Size(1)"`
+		SizeSlice    []string `form:"SizeSlice" binding:"Size(1)"`
 		MinSize      string   `form:"MinSize" binding:"MinSize(5)"`
 		MinSizeSlice []string `form:"MinSizeSlice" binding:"MinSize(5)"`
 		MaxSize      string   `form:"MaxSize" binding:"MaxSize(1)"`

@@ -32,9 +32,7 @@ import (
 	"github.com/Unknwon/macaron"
 )
 
-// NOTE: last sync 1928ed2 on Aug 26, 2014.
-
-const _VERSION = "0.0.6"
+const _VERSION = "0.1.0"
 
 func Version() string {
 	return _VERSION
@@ -336,6 +334,17 @@ func validateStruct(errors Errors, obj interface{}) Errors {
 			case rule == "AlphaDashDot":
 				if alphaDashDotPattern.MatchString(fmt.Sprintf("%v", fieldValue)) {
 					errors.Add([]string{field.Name}, ERR_ALPHA_DASH_DOT, "AlphaDashDot")
+					break VALIDATE_RULES
+				}
+			case strings.HasPrefix(rule, "Size("):
+				size, _ := strconv.Atoi(rule[5 : len(rule)-1])
+				if str, ok := fieldValue.(string); ok && utf8.RuneCountInString(str) != size {
+					errors.Add([]string{field.Name}, ERR_SIZE, "Size")
+					break VALIDATE_RULES
+				}
+				v := reflect.ValueOf(fieldValue)
+				if v.Kind() == reflect.Slice && v.Len() != size {
+					errors.Add([]string{field.Name}, ERR_SIZE, "Size")
 					break VALIDATE_RULES
 				}
 			case strings.HasPrefix(rule, "MinSize("):
