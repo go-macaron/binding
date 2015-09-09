@@ -342,6 +342,34 @@ var validationTestCases = []validationTestCase{
 			},
 		},
 	},
+	{
+		description: "slice of structs Validation",
+		data: Group{
+			Name: "group1",
+			People: []Person{
+				Person{Name: "anthony"},
+				Person{Name: "awoods"},
+			},
+		},
+		expectedErrors: Errors{},
+	},
+	{
+		description: "slice of structs Validation failer",
+		data: Group{
+			Name: "group1",
+			People: []Person{
+				Person{Name: "anthony"},
+				Person{Name: ""},
+			},
+		},
+		expectedErrors: Errors{
+			Error{
+				FieldNames:     []string{"name"},
+				Classification: ERR_REQUIRED,
+				Message:        "Required",
+			},
+		},
+	},
 }
 
 func Test_Validation(t *testing.T) {

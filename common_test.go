@@ -78,6 +78,11 @@ type (
 		Empty        string   `binding:"OmitEmpty"`
 	}
 
+	Group struct {
+		Name   string   `json:"name" binding:"Required"`
+		People []Person `json:"people" binding:"MinSize(1)"`
+	}
+
 	CustomErrorHandle struct {
 		Rule `binding:"CustomRule"`
 	}
@@ -108,6 +113,10 @@ func (p Post) Validate(ctx *macaron.Context, errs Errors) Errors {
 
 func (p Post) Model() string {
 	return p.Title
+}
+
+func (g Group) Model() string {
+	return g.Name
 }
 
 func (_ CustomErrorHandle) Error(_ *macaron.Context, _ Errors) {}
