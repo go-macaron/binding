@@ -309,124 +309,148 @@ func validateStruct(errors Errors, obj interface{}) Errors {
 				field.Type.Elem().Kind() == reflect.Struct) {
 			errors = validateStruct(errors, fieldValue)
 		}
+		errors = validateField(errors, zero, field, fieldVal, fieldValue)
+	}
+	return errors
+}
 
-	VALIDATE_RULES:
-		for _, rule := range strings.Split(field.Tag.Get("binding"), ";") {
-			if len(rule) == 0 {
-				continue
+func validateField(errors Errors, zero interface{}, field reflect.StructField, fieldVal reflect.Value, fieldValue interface{}) Errors {
+	if fieldVal.Kind() == reflect.Slice {
+		for i := 0; i < fieldVal.Len(); i++ {
+			sliceVal := fieldVal.Index(i)
+			if sliceVal.Kind() == reflect.Ptr {
+				sliceVal = sliceVal.Elem()
 			}
 
-			switch {
-			case rule == "OmitEmpty":
-				if reflect.DeepEqual(zero, fieldValue) {
+			sliceValue := sliceVal.Interface()
+			zero := reflect.Zero(sliceVal.Type()).Interface()
+			if sliceVal.Kind() == reflect.Struct ||
+				(sliceVal.Kind() == reflect.Ptr && !reflect.DeepEqual(zero, sliceValue) &&
+					sliceVal.Elem().Kind() == reflect.Struct) {
+				errors = validateStruct(errors, sliceValue)
+			}
+			/* Apply validation rules to each item in a slice. ISSUE #3
+			else {
+				errors = validateField(errors, zero, field, sliceVal, sliceValue)
+			}*/
+		}
+	}
+VALIDATE_RULES:
+	for _, rule := range strings.Split(field.Tag.Get("binding"), ";") {
+		if len(rule) == 0 {
+			continue
+		}
+
+		switch {
+		case rule == "OmitEmpty":
+			if reflect.DeepEqual(zero, fieldValue) {
+				break VALIDATE_RULES
+			}
+		case rule == "Required":
+			if reflect.DeepEqual(zero, fieldValue) {
+				errors.Add([]string{field.Name}, ERR_REQUIRED, "Required")
+				break VALIDATE_RULES
+			}
+		case rule == "AlphaDash":
+			if alphaDashPattern.MatchString(fmt.Sprintf("%v", fieldValue)) {
+				errors.Add([]string{field.Name}, ERR_ALPHA_DASH, "AlphaDash")
+				break VALIDATE_RULES
+			}
+		case rule == "AlphaDashDot":
+			if alphaDashDotPattern.MatchString(fmt.Sprintf("%v", fieldValue)) {
+				errors.Add([]string{field.Name}, ERR_ALPHA_DASH_DOT, "AlphaDashDot")
+				break VALIDATE_RULES
+			}
+		case strings.HasPrefix(rule, "Size("):
+			size, _ := strconv.Atoi(rule[5 : len(rule)-1])
+			if str, ok := fieldValue.(string); ok && utf8.RuneCountInString(str) != size {
+				errors.Add([]string{field.Name}, ERR_SIZE, "Size")
+				break VALIDATE_RULES
+			}
+			v := reflect.ValueOf(fieldValue)
+			if v.Kind() == reflect.Slice && v.Len() != size {
+				errors.Add([]string{field.Name}, ERR_SIZE, "Size")
+				break VALIDATE_RULES
+			}
+		case strings.HasPrefix(rule, "MinSize("):
+			min, _ := strconv.Atoi(rule[8 : len(rule)-1])
+			if str, ok := fieldValue.(string); ok && utf8.RuneCountInString(str) < min {
+				errors.Add([]string{field.Name}, ERR_MIN_SIZE, "MinSize")
+				break VALIDATE_RULES
+			}
+			v := reflect.ValueOf(fieldValue)
+			if v.Kind() == reflect.Slice && v.Len() < min {
+				errors.Add([]string{field.Name}, ERR_MIN_SIZE, "MinSize")
+				break VALIDATE_RULES
+			}
+		case strings.HasPrefix(rule, "MaxSize("):
+			max, _ := strconv.Atoi(rule[8 : len(rule)-1])
+			if str, ok := fieldValue.(string); ok && utf8.RuneCountInString(str) > max {
+				errors.Add([]string{field.Name}, ERR_MAX_SIZE, "MaxSize")
+				break VALIDATE_RULES
+			}
+			v := reflect.ValueOf(fieldValue)
+			if v.Kind() == reflect.Slice && v.Len() > max {
+				errors.Add([]string{field.Name}, ERR_MAX_SIZE, "MaxSize")
+				break VALIDATE_RULES
+			}
+		case strings.HasPrefix(rule, "Range("):
+			nums := strings.Split(rule[6:len(rule)-1], ",")
+			if len(nums) != 2 {
+				break VALIDATE_RULES
+			}
+			val := com.StrTo(fmt.Sprintf("%v", fieldValue)).MustInt()
+			if val < com.StrTo(nums[0]).MustInt() || val > com.StrTo(nums[1]).MustInt() {
+				errors.Add([]string{field.Name}, ERR_RANGE, "Range")
+				break VALIDATE_RULES
+			}
+		case rule == "Email":
+			if !emailPattern.MatchString(fmt.Sprintf("%v", fieldValue)) {
+				errors.Add([]string{field.Name}, ERR_EMAIL, "Email")
+				break VALIDATE_RULES
+			}
+		case rule == "Url":
+			str := fmt.Sprintf("%v", fieldValue)
+			if len(str) == 0 {
+				continue
+			} else if !urlPattern.MatchString(str) {
+				errors.Add([]string{field.Name}, ERR_URL, "Url")
+				break VALIDATE_RULES
+			}
+		case strings.HasPrefix(rule, "In("):
+			if !in(fieldValue, rule[3:len(rule)-1]) {
+				errors.Add([]string{field.Name}, ERR_IN, "In")
+				break VALIDATE_RULES
+			}
+		case strings.HasPrefix(rule, "NotIn("):
+			if in(fieldValue, rule[6:len(rule)-1]) {
+				errors.Add([]string{field.Name}, ERR_NOT_INT, "NotIn")
+				break VALIDATE_RULES
+			}
+		case strings.HasPrefix(rule, "Include("):
+			if !strings.Contains(fmt.Sprintf("%v", fieldValue), rule[8:len(rule)-1]) {
+				errors.Add([]string{field.Name}, ERR_INCLUDE, "Include")
+				break VALIDATE_RULES
+			}
+		case strings.HasPrefix(rule, "Exclude("):
+			if strings.Contains(fmt.Sprintf("%v", fieldValue), rule[8:len(rule)-1]) {
+				errors.Add([]string{field.Name}, ERR_EXCLUDE, "Exclude")
+				break VALIDATE_RULES
+			}
+		case strings.HasPrefix(rule, "Default("):
+			if reflect.DeepEqual(zero, fieldValue) {
+				if fieldVal.CanAddr() {
+					setWithProperType(field.Type.Kind(), rule[8:len(rule)-1], fieldVal, field.Tag.Get("form"), errors)
+				} else {
+					errors.Add([]string{field.Name}, ERR_EXCLUDE, "Default")
 					break VALIDATE_RULES
 				}
-			case rule == "Required":
-				if reflect.DeepEqual(zero, fieldValue) {
-					errors.Add([]string{field.Name}, ERR_REQUIRED, "Required")
+			}
+		default:
+			// Apply custom validation rules.
+			for i := range ruleMapper {
+				if ruleMapper[i].IsMatch(rule) && !ruleMapper[i].IsValid(errors, field.Name, fieldValue) {
 					break VALIDATE_RULES
-				}
-			case rule == "AlphaDash":
-				if alphaDashPattern.MatchString(fmt.Sprintf("%v", fieldValue)) {
-					errors.Add([]string{field.Name}, ERR_ALPHA_DASH, "AlphaDash")
-					break VALIDATE_RULES
-				}
-			case rule == "AlphaDashDot":
-				if alphaDashDotPattern.MatchString(fmt.Sprintf("%v", fieldValue)) {
-					errors.Add([]string{field.Name}, ERR_ALPHA_DASH_DOT, "AlphaDashDot")
-					break VALIDATE_RULES
-				}
-			case strings.HasPrefix(rule, "Size("):
-				size, _ := strconv.Atoi(rule[5 : len(rule)-1])
-				if str, ok := fieldValue.(string); ok && utf8.RuneCountInString(str) != size {
-					errors.Add([]string{field.Name}, ERR_SIZE, "Size")
-					break VALIDATE_RULES
-				}
-				v := reflect.ValueOf(fieldValue)
-				if v.Kind() == reflect.Slice && v.Len() != size {
-					errors.Add([]string{field.Name}, ERR_SIZE, "Size")
-					break VALIDATE_RULES
-				}
-			case strings.HasPrefix(rule, "MinSize("):
-				min, _ := strconv.Atoi(rule[8 : len(rule)-1])
-				if str, ok := fieldValue.(string); ok && utf8.RuneCountInString(str) < min {
-					errors.Add([]string{field.Name}, ERR_MIN_SIZE, "MinSize")
-					break VALIDATE_RULES
-				}
-				v := reflect.ValueOf(fieldValue)
-				if v.Kind() == reflect.Slice && v.Len() < min {
-					errors.Add([]string{field.Name}, ERR_MIN_SIZE, "MinSize")
-					break VALIDATE_RULES
-				}
-			case strings.HasPrefix(rule, "MaxSize("):
-				max, _ := strconv.Atoi(rule[8 : len(rule)-1])
-				if str, ok := fieldValue.(string); ok && utf8.RuneCountInString(str) > max {
-					errors.Add([]string{field.Name}, ERR_MAX_SIZE, "MaxSize")
-					break VALIDATE_RULES
-				}
-				v := reflect.ValueOf(fieldValue)
-				if v.Kind() == reflect.Slice && v.Len() > max {
-					errors.Add([]string{field.Name}, ERR_MAX_SIZE, "MaxSize")
-					break VALIDATE_RULES
-				}
-			case strings.HasPrefix(rule, "Range("):
-				nums := strings.Split(rule[6:len(rule)-1], ",")
-				if len(nums) != 2 {
-					break VALIDATE_RULES
-				}
-				val := com.StrTo(fmt.Sprintf("%v", fieldValue)).MustInt()
-				if val < com.StrTo(nums[0]).MustInt() || val > com.StrTo(nums[1]).MustInt() {
-					errors.Add([]string{field.Name}, ERR_RANGE, "Range")
-					break VALIDATE_RULES
-				}
-			case rule == "Email":
-				if !emailPattern.MatchString(fmt.Sprintf("%v", fieldValue)) {
-					errors.Add([]string{field.Name}, ERR_EMAIL, "Email")
-					break VALIDATE_RULES
-				}
-			case rule == "Url":
-				str := fmt.Sprintf("%v", fieldValue)
-				if len(str) == 0 {
-					continue
-				} else if !urlPattern.MatchString(str) {
-					errors.Add([]string{field.Name}, ERR_URL, "Url")
-					break VALIDATE_RULES
-				}
-			case strings.HasPrefix(rule, "In("):
-				if !in(fieldValue, rule[3:len(rule)-1]) {
-					errors.Add([]string{field.Name}, ERR_IN, "In")
-					break VALIDATE_RULES
-				}
-			case strings.HasPrefix(rule, "NotIn("):
-				if in(fieldValue, rule[6:len(rule)-1]) {
-					errors.Add([]string{field.Name}, ERR_NOT_INT, "NotIn")
-					break VALIDATE_RULES
-				}
-			case strings.HasPrefix(rule, "Include("):
-				if !strings.Contains(fmt.Sprintf("%v", fieldValue), rule[8:len(rule)-1]) {
-					errors.Add([]string{field.Name}, ERR_INCLUDE, "Include")
-					break VALIDATE_RULES
-				}
-			case strings.HasPrefix(rule, "Exclude("):
-				if strings.Contains(fmt.Sprintf("%v", fieldValue), rule[8:len(rule)-1]) {
-					errors.Add([]string{field.Name}, ERR_EXCLUDE, "Exclude")
-					break VALIDATE_RULES
-				}
-			case strings.HasPrefix(rule, "Default("):
-				if reflect.DeepEqual(zero, fieldValue) {
-					if fieldVal.CanAddr() {
-						setWithProperType(field.Type.Kind(), rule[8:len(rule)-1], fieldVal, field.Tag.Get("form"), errors)
-					} else {
-						errors.Add([]string{field.Name}, ERR_EXCLUDE, "Default")
-						break VALIDATE_RULES
-					}
-				}
-			default:
-				// Apply custom validation rules.
-				for i := range ruleMapper {
-					if ruleMapper[i].IsMatch(rule) && !ruleMapper[i].IsValid(errors, field.Name, fieldValue) {
-						break VALIDATE_RULES
-					}
 				}
 			}
 		}
