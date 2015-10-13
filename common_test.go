@@ -18,7 +18,7 @@ package binding
 import (
 	"mime/multipart"
 
-	"github.com/Unknwon/macaron"
+	"gopkg.in/macaron.v1"
 )
 
 // These types are mostly contrived examples, but they're used

@@ -29,7 +29,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/Unknwon/com"
-	"github.com/Unknwon/macaron"
+	"gopkg.in/macaron.v1"
 )
 
 const _VERSION = "0.2.0"
