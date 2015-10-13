@@ -1,5 +1,5 @@
-// Copyright 2014 martini-contrib/binding Authors
-// Copyright 2014 Unknwon
+// Copyright 2014 Martini Authors
+// Copyright 2014 The Macaron Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License"): you may
 // not use this file except in compliance with the License. You may obtain
@@ -32,7 +32,7 @@ import (
 	"github.com/Unknwon/macaron"
 )
 
-const _VERSION = "0.1.0"
+const _VERSION = "0.2.0"
 
 func Version() string {
 	return _VERSION
@@ -335,6 +335,7 @@ func validateField(errors Errors, zero interface{}, field reflect.StructField, f
 			}*/
 		}
 	}
+
 VALIDATE_RULES:
 	for _, rule := range strings.Split(field.Tag.Get("binding"), ";") {
 		if len(rule) == 0 {
