@@ -174,6 +174,14 @@ func MultipartForm(formStruct interface{}, ifacePtr ...interface{}) macaron.Hand
 				if parseErr != nil {
 					errors.Add([]string{}, ERR_DESERIALIZATION, parseErr.Error())
 				}
+
+				if ctx.Req.Form == nil {
+					ctx.Req.ParseForm()
+				}
+				for k, v := range form.Value {
+					ctx.Req.Form[k] = append(ctx.Req.Form[k], v...)
+				}
+
 				ctx.Req.MultipartForm = form
 			}
 		}
