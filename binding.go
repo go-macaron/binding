@@ -246,7 +246,7 @@ var (
 	alphaDashPattern    = regexp.MustCompile("[^\\d\\w-_]")
 	alphaDashDotPattern = regexp.MustCompile("[^\\d\\w-_\\.]")
 	emailPattern        = regexp.MustCompile("[\\w!#$%&'*+/=?^_`{|}~-]+(?:\\.[\\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\\w](?:[\\w-]*[\\w])?\\.)+[a-zA-Z0-9](?:[\\w-]*[\\w])?")
-	urlPattern          = regexp.MustCompile(`(http|https):\/\/[\w\-_]+(\.[\w\-_]+)*([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?`)
+	urlPattern          = regexp.MustCompile(`(http|https):\/\/(?:\\S+(?::\\S*)?@)?[\w\-_]+(\.[\w\-_]+)*([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?`)
 )
 
 type (
