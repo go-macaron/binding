@@ -156,8 +156,8 @@ func init() {
 		func(rule string) bool {
 			return rule == "CustomRule"
 		},
-		func(_ Errors, _ string, _ interface{}) bool {
-			return false
+		func(errs Errors, _ string, _ interface{}) (bool, Errors) {
+			return false, errs
 		},
 	})
 	SetNameMapper(nameMapper)
