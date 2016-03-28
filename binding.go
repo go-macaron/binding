@@ -32,7 +32,7 @@ import (
 	"gopkg.in/macaron.v1"
 )
 
-const _VERSION = "0.3.0"
+const _VERSION = "0.3.1"
 
 func Version() string {
 	return _VERSION
@@ -459,9 +459,11 @@ VALIDATE_RULES:
 			// Apply custom validation rules.
 			var isValid bool
 			for i := range ruleMapper {
-				isValid, errors = ruleMapper[i].IsValid(errors, field.Name, fieldValue)
-				if ruleMapper[i].IsMatch(rule) && !isValid {
-					break VALIDATE_RULES
+				if ruleMapper[i].IsMatch(rule) {
+					isValid, errors = ruleMapper[i].IsValid(errors, field.Name, fieldValue)
+					if !isValid {
+						break VALIDATE_RULES
+					}
 				}
 			}
 		}
