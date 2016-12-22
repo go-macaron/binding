@@ -62,6 +62,11 @@ func Test_SetWithProperType(t *testing.T) {
 
 			m.Post(testRoute, Form(Everything{}), func(actual Everything, errs Errors) {
 				So(fmt.Sprintf("%+v", actual), ShouldEqual, fmt.Sprintf("%+v", expectedOutputs[key]))
+				if key == "errorful" {
+					So(errs, ShouldHaveLength, 10)
+				} else {
+					So(errs, ShouldHaveLength, 0)
+				}
 			})
 			req, err := http.NewRequest("POST", testRoute, strings.NewReader(testCase))
 			if err != nil {
