@@ -32,7 +32,7 @@ import (
 	"gopkg.in/macaron.v1"
 )
 
-const _VERSION = "0.4.0"
+const _VERSION = "0.5.0"
 
 func Version() string {
 	return _VERSION
@@ -211,13 +211,35 @@ func Json(jsonStruct interface{}, ifacePtr ...interface{}) macaron.Handler {
 	}
 }
 
+// RawValidate is same as Validate but does not require a HTTP context,
+// and can be used independently just for validation.
+// This function does not support Validator interface.
+func RawValidate(obj interface{}) Errors {
+	var errs Errors
+	v := reflect.ValueOf(obj)
+	k := v.Kind()
+	if k == reflect.Interface || k == reflect.Ptr {
+		v = v.Elem()
+		k = v.Kind()
+	}
+	if k == reflect.Slice || k == reflect.Array {
+		for i := 0; i < v.Len(); i++ {
+			e := v.Index(i).Interface()
+			errs = validateStruct(errs, e)
+		}
+	} else {
+		errs = validateStruct(errs, obj)
+	}
+	return errs
+}
+
 // Validate is middleware to enforce required fields. If the struct
 // passed in implements Validator, then the user-defined Validate method
 // is executed, and its errors are mapped to the context. This middleware
 // performs no error handling: it merely detects errors and maps them.
 func Validate(obj interface{}) macaron.Handler {
 	return func(ctx *macaron.Context) {
-		var errors Errors
+		var errs Errors
 		v := reflect.ValueOf(obj)
 		k := v.Kind()
 		if k == reflect.Interface || k == reflect.Ptr {
@@ -227,18 +249,18 @@ func Validate(obj interface{}) macaron.Handler {
 		if k == reflect.Slice || k == reflect.Array {
 			for i := 0; i < v.Len(); i++ {
 				e := v.Index(i).Interface()
-				errors = validateStruct(errors, e)
+				errs = validateStruct(errs, e)
 				if validator, ok := e.(Validator); ok {
-					errors = validator.Validate(ctx, errors)
+					errs = validator.Validate(ctx, errs)
 				}
 			}
 		} else {
-			errors = validateStruct(errors, obj)
+			errs = validateStruct(errs, obj)
 			if validator, ok := obj.(Validator); ok {
-				errors = validator.Validate(ctx, errors)
+				errs = validator.Validate(ctx, errs)
 			}
 		}
-		ctx.Map(errors)
+		ctx.Map(errs)
 	}
 }
 
