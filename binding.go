@@ -394,6 +394,16 @@ VALIDATE_RULES:
 				break VALIDATE_RULES
 			}
 		case rule == "Required":
+			v := reflect.ValueOf(fieldValue)
+			if v.Kind() == reflect.Slice {
+				if v.Len() == 0 {
+					errors.Add([]string{field.Name}, ERR_REQUIRED, "Required")
+					break VALIDATE_RULES
+				}
+
+				continue
+			}
+
 			if reflect.DeepEqual(zero, fieldValue) {
 				errors.Add([]string{field.Name}, ERR_REQUIRED, "Required")
 				break VALIDATE_RULES
