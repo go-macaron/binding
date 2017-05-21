@@ -32,7 +32,7 @@ import (
 	"gopkg.in/macaron.v1"
 )
 
-const _VERSION = "0.3.2"
+const _VERSION = "0.4.0"
 
 func Version() string {
 	return _VERSION
@@ -257,16 +257,32 @@ type (
 		// IsValid applies validation rule to condition.
 		IsValid func(Errors, string, interface{}) (bool, Errors)
 	}
-	// RuleMapper represents a validation rule mapper,
+
+	// ParamRule does same thing as Rule but passes rule itself to IsValid method.
+	ParamRule struct {
+		// IsMatch checks if rule matches.
+		IsMatch func(string) bool
+		// IsValid applies validation rule to condition.
+		IsValid func(Errors, string, string, interface{}) (bool, Errors)
+	}
+
+	// RuleMapper and ParamRuleMapper represent validation rule mappers,
 	// it allwos users to add custom validation rules.
-	RuleMapper []*Rule
+	RuleMapper      []*Rule
+	ParamRuleMapper []*ParamRule
 )
 
 var ruleMapper RuleMapper
+var paramRuleMapper ParamRuleMapper
 
 // AddRule adds new validation rule.
 func AddRule(r *Rule) {
 	ruleMapper = append(ruleMapper, r)
+}
+
+// AddParamRule adds new validation rule.
+func AddParamRule(r *ParamRule) {
+	paramRuleMapper = append(paramRuleMapper, r)
 }
 
 func in(fieldValue interface{}, arr string) bool {
@@ -456,11 +472,19 @@ VALIDATE_RULES:
 				}
 			}
 		default:
-			// Apply custom validation rules.
+			// Apply custom validation rules
 			var isValid bool
 			for i := range ruleMapper {
 				if ruleMapper[i].IsMatch(rule) {
 					isValid, errors = ruleMapper[i].IsValid(errors, field.Name, fieldValue)
+					if !isValid {
+						break VALIDATE_RULES
+					}
+				}
+			}
+			for i := range paramRuleMapper {
+				if paramRuleMapper[i].IsMatch(rule) {
+					isValid, errors = paramRuleMapper[i].IsValid(errors, rule, field.Name, fieldValue)
 					if !isValid {
 						break VALIDATE_RULES
 					}
