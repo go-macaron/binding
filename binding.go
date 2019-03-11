@@ -30,6 +30,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/Unknwon/com"
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"gopkg.in/macaron.v1"
 )
 
@@ -203,7 +205,13 @@ func Json(jsonStruct interface{}, ifacePtr ...interface{}) macaron.Handler {
 		jsonStruct := reflect.New(reflect.TypeOf(jsonStruct))
 		if ctx.Req.Request.Body != nil {
 			defer ctx.Req.Request.Body.Close()
-			err := json.NewDecoder(ctx.Req.Request.Body).Decode(jsonStruct.Interface())
+			v := jsonStruct.Interface()
+			var err error
+			if pb, ok := v.(proto.Message); ok {
+				err = jsonpb.Unmarshal(ctx.Req.Request.Body, pb)
+			} else {
+				err = json.NewDecoder(ctx.Req.Request.Body).Decode(v)
+			}
 			if err != nil && err != io.EOF {
 				errors.Add([]string{}, ERR_DESERIALIZATION, err.Error())
 			}
