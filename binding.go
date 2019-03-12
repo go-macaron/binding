@@ -32,6 +32,7 @@ import (
 	"github.com/Unknwon/com"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
+	"github.com/gorilla/schema"
 	"gopkg.in/macaron.v1"
 )
 
@@ -204,13 +205,22 @@ func Json(jsonStruct interface{}, ifacePtr ...interface{}) macaron.Handler {
 		ensureNotPointer(jsonStruct)
 		jsonStruct := reflect.New(reflect.TypeOf(jsonStruct))
 		if ctx.Req.Request.Body != nil {
-			defer ctx.Req.Request.Body.Close()
-			v := jsonStruct.Interface()
 			var err error
-			if pb, ok := v.(proto.Message); ok {
-				err = jsonpb.Unmarshal(ctx.Req.Request.Body, pb)
-			} else {
-				err = json.NewDecoder(ctx.Req.Request.Body).Decode(v)
+			if ctx.Req.Method == "POST" || ctx.Req.Method == "PUT" || ctx.Req.Method == "PATCH" {
+				defer ctx.Req.Request.Body.Close()
+				v := jsonStruct.Interface()
+				if pb, ok := v.(proto.Message); ok {
+					err = jsonpb.Unmarshal(ctx.Req.Request.Body, pb)
+				} else {
+					err = json.NewDecoder(ctx.Req.Request.Body).Decode(v)
+				}
+			}
+			if err == nil && ctx.Req.URL != nil {
+				if params := ctx.Req.URL.Query(); len(params) > 0 {
+					d := schema.NewDecoder()
+					d.SetAliasTag("json")
+					err = d.Decode(jsonStruct.Interface(), params)
+				}
 			}
 			if err != nil && err != io.EOF {
 				errors.Add([]string{}, ERR_DESERIALIZATION, err.Error())
