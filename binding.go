@@ -204,9 +204,9 @@ func Json(jsonStruct interface{}, ifacePtr ...interface{}) macaron.Handler {
 		var errors Errors
 		ensureNotPointer(jsonStruct)
 		jsonStruct := reflect.New(reflect.TypeOf(jsonStruct))
-		if ctx.Req.Request.Body != nil {
-			var err error
-			if ctx.Req.Method == "POST" || ctx.Req.Method == "PUT" || ctx.Req.Method == "PATCH" {
+		var err error
+		if ctx.Req.Method == "POST" || ctx.Req.Method == "PUT" || ctx.Req.Method == "PATCH" {
+			if ctx.Req.Request.Body != nil {
 				defer ctx.Req.Request.Body.Close()
 				v := jsonStruct.Interface()
 				if pb, ok := v.(proto.Message); ok {
@@ -215,16 +215,16 @@ func Json(jsonStruct interface{}, ifacePtr ...interface{}) macaron.Handler {
 					err = json.NewDecoder(ctx.Req.Request.Body).Decode(v)
 				}
 			}
-			if err == nil && ctx.Req.URL != nil {
-				if params := ctx.Req.URL.Query(); len(params) > 0 {
-					d := schema.NewDecoder()
-					d.SetAliasTag("json")
-					err = d.Decode(jsonStruct.Interface(), params)
-				}
+		}
+		if (err == nil || err == io.EOF) && ctx.Req.URL != nil {
+			if params := ctx.Req.URL.Query(); len(params) > 0 {
+				d := schema.NewDecoder()
+				d.SetAliasTag("json")
+				err = d.Decode(jsonStruct.Interface(), params)
 			}
-			if err != nil && err != io.EOF {
-				errors.Add([]string{}, ERR_DESERIALIZATION, err.Error())
-			}
+		}
+		if err != nil && err != io.EOF {
+			errors.Add([]string{}, ERR_DESERIALIZATION, err.Error())
 		}
 		validateAndMap(jsonStruct, ctx, errors, ifacePtr...)
 	}
