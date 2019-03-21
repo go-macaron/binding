@@ -207,7 +207,6 @@ func Json(jsonStruct interface{}, ifacePtr ...interface{}) macaron.Handler {
 		var err error
 		if ctx.Req.Method == "POST" || ctx.Req.Method == "PUT" || ctx.Req.Method == "PATCH" {
 			if ctx.Req.Request.Body != nil {
-				defer ctx.Req.Request.Body.Close()
 				v := jsonStruct.Interface()
 				if pb, ok := v.(proto.Message); ok {
 					err = jsonpb.Unmarshal(ctx.Req.Request.Body, pb)
