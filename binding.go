@@ -33,12 +33,6 @@ import (
 	"gopkg.in/macaron.v1"
 )
 
-const _VERSION = "0.6.1"
-
-func Version() string {
-	return _VERSION
-}
-
 func bind(ctx *macaron.Context, obj interface{}, ifacePtr ...interface{}) {
 	contentType := ctx.Req.Header.Get("Content-Type")
 	if ctx.Req.Method == "POST" || ctx.Req.Method == "PUT" || ctx.Req.Method == "PATCH" {
