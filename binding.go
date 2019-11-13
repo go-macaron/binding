@@ -41,7 +41,7 @@ func Version() string {
 
 func bind(ctx *macaron.Context, obj interface{}, ifacePtr ...interface{}) {
 	contentType := ctx.Req.Header.Get("Content-Type")
-	if ctx.Req.Method == "POST" || ctx.Req.Method == "PUT" {
+	if ctx.Req.Method == "POST" || ctx.Req.Method == "PUT" || ctx.Req.Method == "PATCH" {
 		switch {
 		case strings.Contains(contentType, "form-urlencoded"):
 			ctx.Invoke(Form(obj, ifacePtr...))
