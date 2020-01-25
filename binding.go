@@ -88,7 +88,7 @@ func errorHandler(errs Errors, rw http.ResponseWriter) {
 	}
 }
 
-// CustomErrorHandler will be invoked if errors occured
+// CustomErrorHandler will be invoked if errors occured.
 var CustomErrorHandler func(*macaron.Context, Errors)
 
 // Bind wraps up the functionality of the Form and Json middleware
