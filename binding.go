@@ -88,6 +88,9 @@ func errorHandler(errs Errors, rw http.ResponseWriter) {
 	}
 }
 
+// CustomErrorHandler will be invoked if errors occured.
+var CustomErrorHandler func(*macaron.Context, Errors)
+
 // Bind wraps up the functionality of the Form and Json middleware
 // according to the Content-Type and verb of the request.
 // A Content-Type is required for POST and PUT requests.
@@ -101,6 +104,8 @@ func Bind(obj interface{}, ifacePtr ...interface{}) macaron.Handler {
 		bind(ctx, obj, ifacePtr...)
 		if handler, ok := obj.(ErrorHandler); ok {
 			ctx.Invoke(handler.Error)
+		} else if CustomErrorHandler != nil {
+			ctx.Invoke(CustomErrorHandler)
 		} else {
 			ctx.Invoke(errorHandler)
 		}
