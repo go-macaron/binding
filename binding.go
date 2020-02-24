@@ -138,6 +138,14 @@ func Form(formStruct interface{}, ifacePtr ...interface{}) macaron.Handler {
 		formStruct := reflect.New(reflect.TypeOf(formStruct))
 		parseErr := ctx.Req.ParseForm()
 
+		val := formStruct.Elem()
+		for k, v := range ctx.AllParams() {
+			field := val.FieldByName(k[1:])
+			if field.IsValid() {
+				field.SetString(v)
+			}
+		}
+		
 		// Format validation of the request body or the URL would add considerable overhead,
 		// and ParseForm does not complain when URL encoding is off.
 		// Because an empty request body or url can also mean absence of all needed values,
