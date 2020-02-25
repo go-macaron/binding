@@ -112,25 +112,6 @@ func Bind(obj interface{}, ifacePtr ...interface{}) macaron.Handler {
 	}
 }
 
-// URL works like Bind, but bind fields from args in URL to struct.
-func URL(obj interface{}, ifacePtr ...interface{}) macaron.Handler {
-	return func(ctx *macaron.Context) {
-		var errors Errors
-
-		ensureNotPointer(obj)
-		obj := reflect.New(reflect.TypeOf(obj))
-
-		val := obj.Elem()
-		for k, v := range ctx.AllParams() {
-			field := val.FieldByName(k[1:])
-			if field.IsValid() {
-				errors = setWithProperType(field.Kind(), v, field, k, errors)
-			}
-		}
-		validateAndMap(obj, ctx, errors, ifacePtr...)
-	}
-}
-
 // BindIgnErr will do the exactly same thing as Bind but without any
 // error handling, which user has freedom to deal with them.
 // This allows user take advantages of validation.
@@ -227,6 +208,25 @@ func Json(jsonStruct interface{}, ifacePtr ...interface{}) macaron.Handler {
 			}
 		}
 		validateAndMap(jsonStruct, ctx, errors, ifacePtr...)
+	}
+}
+
+// URL is the middleware to parse URL parameters into struct fields.
+func URL(obj interface{}, ifacePtr ...interface{}) macaron.Handler {
+	return func(ctx *macaron.Context) {
+		var errors Errors
+
+		ensureNotPointer(obj)
+		obj := reflect.New(reflect.TypeOf(obj))
+
+		val := obj.Elem()
+		for k, v := range ctx.AllParams() {
+			field := val.FieldByName(k[1:])
+			if field.IsValid() {
+				errors = setWithProperType(field.Kind(), v, field, k, errors)
+			}
+		}
+		validateAndMap(obj, ctx, errors, ifacePtr...)
 	}
 }
 
