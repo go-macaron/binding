@@ -156,7 +156,7 @@ func Form(formStruct interface{}, ifacePtr ...interface{}) macaron.Handler {
 		ensureNotPointer(formStruct)
 		formStruct := reflect.New(reflect.TypeOf(formStruct))
 		parseErr := ctx.Req.ParseForm()
-		
+
 		// Format validation of the request body or the URL would add considerable overhead,
 		// and ParseForm does not complain when URL encoding is off.
 		// Because an empty request body or url can also mean absence of all needed values,
