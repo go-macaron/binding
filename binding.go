@@ -124,7 +124,7 @@ func URL(obj interface{}, ifacePtr ...interface{}) macaron.Handler {
 		for k, v := range ctx.AllParams() {
 			field := val.FieldByName(k[1:])
 			if field.IsValid() {
-				field.SetString(v)
+				errors = setWithProperType(field.Kind(), v, field, k, errors)
 			}
 		}
 		validateAndMap(obj, ctx, errors, ifacePtr...)
