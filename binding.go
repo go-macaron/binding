@@ -211,6 +211,25 @@ func Json(jsonStruct interface{}, ifacePtr ...interface{}) macaron.Handler {
 	}
 }
 
+// URL is the middleware to parse URL parameters into struct fields.
+func URL(obj interface{}, ifacePtr ...interface{}) macaron.Handler {
+	return func(ctx *macaron.Context) {
+		var errors Errors
+
+		ensureNotPointer(obj)
+		obj := reflect.New(reflect.TypeOf(obj))
+
+		val := obj.Elem()
+		for k, v := range ctx.AllParams() {
+			field := val.FieldByName(k[1:])
+			if field.IsValid() {
+				errors = setWithProperType(field.Kind(), v, field, k, errors)
+			}
+		}
+		validateAndMap(obj, ctx, errors, ifacePtr...)
+	}
+}
+
 // RawValidate is same as Validate but does not require a HTTP context,
 // and can be used independently just for validation.
 // This function does not support Validator interface.
