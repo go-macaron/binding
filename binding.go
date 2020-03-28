@@ -38,11 +38,11 @@ func bind(ctx *macaron.Context, obj interface{}, ifacePtr ...interface{}) {
 	if ctx.Req.Method == "POST" || ctx.Req.Method == "PUT" || ctx.Req.Method == "PATCH" || ctx.Req.Method == "DELETE" {
 		switch {
 		case strings.Contains(contentType, "form-urlencoded"):
-			ctx.Invoke(Form(obj, ifacePtr...))
+			_, _ = ctx.Invoke(Form(obj, ifacePtr...))
 		case strings.Contains(contentType, "multipart/form-data"):
-			ctx.Invoke(MultipartForm(obj, ifacePtr...))
+			_, _ = ctx.Invoke(MultipartForm(obj, ifacePtr...))
 		case strings.Contains(contentType, "json"):
-			ctx.Invoke(Json(obj, ifacePtr...))
+			_, _ = ctx.Invoke(Json(obj, ifacePtr...))
 		default:
 			var errors Errors
 			if contentType == "" {
@@ -54,7 +54,7 @@ func bind(ctx *macaron.Context, obj interface{}, ifacePtr ...interface{}) {
 			ctx.Map(obj) // Map a fake struct so handler won't panic.
 		}
 	} else {
-		ctx.Invoke(Form(obj, ifacePtr...))
+		_, _ = ctx.Invoke(Form(obj, ifacePtr...))
 	}
 }
 
@@ -83,7 +83,7 @@ func errorHandler(errs Errors, rw http.ResponseWriter) {
 			rw.WriteHeader(STATUS_UNPROCESSABLE_ENTITY)
 		}
 		errOutput, _ := json.Marshal(errs)
-		rw.Write(errOutput)
+		_, _ = rw.Write(errOutput)
 		return
 	}
 }
@@ -103,11 +103,11 @@ func Bind(obj interface{}, ifacePtr ...interface{}) macaron.Handler {
 	return func(ctx *macaron.Context) {
 		bind(ctx, obj, ifacePtr...)
 		if handler, ok := obj.(ErrorHandler); ok {
-			ctx.Invoke(handler.Error)
+			_, _ = ctx.Invoke(handler.Error)
 		} else if CustomErrorHandler != nil {
-			ctx.Invoke(CustomErrorHandler)
+			_, _ = ctx.Invoke(CustomErrorHandler)
 		} else {
-			ctx.Invoke(errorHandler)
+			_, _ = ctx.Invoke(errorHandler)
 		}
 	}
 }
@@ -176,7 +176,7 @@ func MultipartForm(formStruct interface{}, ifacePtr ...interface{}) macaron.Hand
 				}
 
 				if ctx.Req.Form == nil {
-					ctx.Req.ParseForm()
+					_ = ctx.Req.ParseForm()
 				}
 				for k, v := range form.Value {
 					ctx.Req.Form[k] = append(ctx.Req.Form[k], v...)
@@ -284,8 +284,8 @@ func Validate(obj interface{}) macaron.Handler {
 }
 
 var (
-	AlphaDashPattern    = regexp.MustCompile("[^\\d\\w-_]")
-	AlphaDashDotPattern = regexp.MustCompile("[^\\d\\w-_\\.]")
+	AlphaDashPattern    = regexp.MustCompile(`[^\d\w-_]`)
+	AlphaDashDotPattern = regexp.MustCompile(`[^\d\w-_\.]`)
 	EmailPattern        = regexp.MustCompile("[\\w!#$%&'*+/=?^_`{|}~-]+(?:\\.[\\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\\w](?:[\\w-]*[\\w])?\\.)+[a-zA-Z0-9](?:[\\w-]*[\\w])?")
 )
 
@@ -744,7 +744,7 @@ func ensureNotPointer(obj interface{}) {
 // with errors from deserialization, then maps both the
 // resulting struct and the errors to the context.
 func validateAndMap(obj reflect.Value, ctx *macaron.Context, errors Errors, ifacePtr ...interface{}) {
-	ctx.Invoke(Validate(obj.Interface()))
+	_, _ = ctx.Invoke(Validate(obj.Interface()))
 	errors = append(errors, getErrors(ctx)...)
 	ctx.Map(errors)
 	ctx.Map(obj.Elem().Interface())

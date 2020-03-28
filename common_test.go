@@ -49,7 +49,7 @@ type (
 		Coauthor    *Person `json:"coauthor"`
 		HeaderImage *multipart.FileHeader
 		Pictures    []*multipart.FileHeader `form:"picture"`
-		unexported  string                  `form:"unexported"`
+		unexported  string                  `form:"unexported"` //nolint
 	}
 
 	EmbedPerson struct {

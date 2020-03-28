@@ -149,7 +149,7 @@ func performErrorTest(t *testing.T, testCase errorTestCase) {
 
 type (
 	errorTestCase struct {
-		description string
+		description string //nolint
 		errors      Errors
 		expected    errorTestResult
 	}
