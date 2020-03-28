@@ -130,7 +130,7 @@ func buildRequestWithFile(testCase fileTestCase) *http.Request {
 		if err != nil {
 			panic("Could not create FormFile (single file): " + err.Error())
 		}
-		formFileSingle.Write([]byte(testCase.singleFile.data))
+		_, _ = formFileSingle.Write([]byte(testCase.singleFile.data))
 	}
 
 	for _, file := range testCase.multipleFiles {
@@ -138,7 +138,7 @@ func buildRequestWithFile(testCase fileTestCase) *http.Request {
 		if err != nil {
 			panic("Could not create FormFile (multiple files): " + err.Error())
 		}
-		formFileMultiple.Write([]byte(file.data))
+		_, _ = formFileMultiple.Write([]byte(file.data))
 	}
 
 	err := w.Close()
@@ -179,7 +179,6 @@ func unpackFileHeaderData(fh *multipart.FileHeader) string {
 type (
 	fileTestCase struct {
 		description   string
-		input         BlogPost
 		singleFile    *fileInfo
 		multipleFiles []*fileInfo
 	}

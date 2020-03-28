@@ -131,15 +131,15 @@ func makeMultipartPayload(testCase multipartFormTestCase) (*bytes.Buffer, *multi
 		body.Write([]byte(`--` + writer.Boundary() + `\nContent-Disposition: form-data; name="foo"\n\n--` + writer.Boundary() + `--`))
 		return body, writer
 	} else {
-		writer.WriteField("title", testCase.inputAndExpected.Title)
-		writer.WriteField("content", testCase.inputAndExpected.Content)
-		writer.WriteField("id", strconv.Itoa(testCase.inputAndExpected.Id))
-		writer.WriteField("ignored", testCase.inputAndExpected.Ignored)
+		_ = writer.WriteField("title", testCase.inputAndExpected.Title)
+		_ = writer.WriteField("content", testCase.inputAndExpected.Content)
+		_ = writer.WriteField("id", strconv.Itoa(testCase.inputAndExpected.Id))
+		_ = writer.WriteField("ignored", testCase.inputAndExpected.Ignored)
 		for _, value := range testCase.inputAndExpected.Ratings {
-			writer.WriteField("rating", strconv.Itoa(value))
+			_ = writer.WriteField("rating", strconv.Itoa(value))
 		}
-		writer.WriteField("name", testCase.inputAndExpected.Author.Name)
-		writer.WriteField("email", testCase.inputAndExpected.Author.Email)
+		_ = writer.WriteField("name", testCase.inputAndExpected.Author.Name)
+		_ = writer.WriteField("email", testCase.inputAndExpected.Author.Email)
 		return body, writer
 	}
 }
