@@ -83,6 +83,10 @@ type (
 		People []Person `json:"people" binding:"MinSize(1)"`
 	}
 
+	UrlForm struct {
+		Url string `form:"Url" binding:"Url"`
+	}
+
 	CustomErrorHandle struct {
 		Rule `binding:"CustomRule"`
 	}
