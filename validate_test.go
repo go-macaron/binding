@@ -370,6 +370,26 @@ var validationTestCases = []validationTestCase{
 			},
 		},
 	},
+	{
+		description: "invalid url Validation",
+		data: UrlForm{
+			Url: "192.168.0.1",
+		},
+		expectedErrors: Errors{
+			Error{
+				FieldNames:     []string{"Url"},
+				Classification: "Url",
+				Message:        "Url",
+			},
+		},
+	},
+	{
+		description: "valid url Validation",
+		data: UrlForm{
+			Url: "https://192.168.0.1:8000",
+		},
+		expectedErrors: Errors{},
+	},
 }
 
 func Test_Validation(t *testing.T) {
