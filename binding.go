@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -228,11 +227,7 @@ func Yaml(yamlStruct interface{}, ifacePtr ...interface{}) macaron.Handler {
 		yamlStruct := reflect.New(reflect.TypeOf(yamlStruct))
 		if ctx.Req.Request.Body != nil {
 			defer ctx.Req.Request.Body.Close()
-			body, err := ioutil.ReadAll(ctx.Req.Request.Body)
-			if err != nil {
-				return
-			}
-			err = yaml.Unmarshal(body, yamlStruct.Interface())
+			err := yaml.NewDecoder(ctx.Req.Request.Body).Decode(yamlStruct.Interface())
 			// err := yaml.NewDecoder(ctx.Req.Request.Body).Decode(jsonStruct.Interface())
 			if err != nil && err != io.EOF {
 				errors.Add([]string{}, ERR_DESERIALIZATION, err.Error())
