@@ -35,6 +35,12 @@ func Test_Bind(t *testing.T) {
 			}
 		})
 
+		Convey("Bind YAML", func() {
+			for _, testCase := range yamlTestCases {
+				performYamlTest(t, Bind, testCase)
+			}
+		})
+
 		Convey("Bind multipart form", func() {
 			for _, testCase := range multipartFormTestCases {
 				performMultipartFormTest(t, Bind, testCase)

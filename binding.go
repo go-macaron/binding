@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -31,6 +32,7 @@ import (
 
 	"github.com/unknwon/com"
 	"gopkg.in/macaron.v1"
+	"gopkg.in/yaml.v3"
 )
 
 func bind(ctx *macaron.Context, obj interface{}, ifacePtr ...interface{}) {
@@ -43,6 +45,8 @@ func bind(ctx *macaron.Context, obj interface{}, ifacePtr ...interface{}) {
 			_, _ = ctx.Invoke(MultipartForm(obj, ifacePtr...))
 		case strings.Contains(contentType, "json"):
 			_, _ = ctx.Invoke(Json(obj, ifacePtr...))
+		case strings.Contains(contentType, "yaml"):
+			_, _ = ctx.Invoke(Yaml(obj, ifacePtr...))
 		default:
 			var errors Errors
 			if contentType == "" {
@@ -60,6 +64,7 @@ func bind(ctx *macaron.Context, obj interface{}, ifacePtr ...interface{}) {
 
 const (
 	_JSON_CONTENT_TYPE          = "application/json; charset=utf-8"
+	_YAML_CONTENT_TYPE          = "text/yaml; charset=utf-8"
 	STATUS_UNPROCESSABLE_ENTITY = 422
 )
 
@@ -208,6 +213,32 @@ func Json(jsonStruct interface{}, ifacePtr ...interface{}) macaron.Handler {
 			}
 		}
 		validateAndMap(jsonStruct, ctx, errors, ifacePtr...)
+	}
+}
+
+// Yaml is middleware to deserialize a YAML payload from the request
+// into the struct that is passed in. The resulting struct is then
+// validated, but no error handling is actually performed here.
+// An interface pointer can be added as a second argument in order
+// to map the struct to a specific interface.
+func Yaml(yamlStruct interface{}, ifacePtr ...interface{}) macaron.Handler {
+	return func(ctx *macaron.Context) {
+		var errors Errors
+		ensureNotPointer(yamlStruct)
+		yamlStruct := reflect.New(reflect.TypeOf(yamlStruct))
+		if ctx.Req.Request.Body != nil {
+			defer ctx.Req.Request.Body.Close()
+			body, err := ioutil.ReadAll(ctx.Req.Request.Body)
+			if err != nil {
+				return
+			}
+			err = yaml.Unmarshal(body, yamlStruct.Interface())
+			// err := yaml.NewDecoder(ctx.Req.Request.Body).Decode(jsonStruct.Interface())
+			if err != nil && err != io.EOF {
+				errors.Add([]string{}, ERR_DESERIALIZATION, err.Error())
+			}
+		}
+		validateAndMap(yamlStruct, ctx, errors, ifacePtr...)
 	}
 }
 
