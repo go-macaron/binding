@@ -211,6 +211,10 @@ func Json(jsonStruct interface{}, ifacePtr ...interface{}) macaron.Handler {
 				errors.Add([]string{}, ERR_DESERIALIZATION, err.Error())
 			}
 		}
+		if errors != nil {
+			ctx.Map(errors)
+			return
+		}
 		validateAndMap(jsonStruct, ctx, errors, ifacePtr...)
 	}
 }
@@ -228,10 +232,13 @@ func Yaml(yamlStruct interface{}, ifacePtr ...interface{}) macaron.Handler {
 		if ctx.Req.Request.Body != nil {
 			defer ctx.Req.Request.Body.Close()
 			err := yaml.NewDecoder(ctx.Req.Request.Body).Decode(yamlStruct.Interface())
-			// err := yaml.NewDecoder(ctx.Req.Request.Body).Decode(jsonStruct.Interface())
 			if err != nil && err != io.EOF {
 				errors.Add([]string{}, ERR_DESERIALIZATION, err.Error())
 			}
+		}
+		if errors != nil {
+			ctx.Map(errors)
+			return
 		}
 		validateAndMap(yamlStruct, ctx, errors, ifacePtr...)
 	}
