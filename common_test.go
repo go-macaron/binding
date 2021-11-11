@@ -27,14 +27,14 @@ import (
 type (
 	// For basic test cases with a required field
 	Post struct {
-		Title   string `form:"title" json:"title" binding:"Required"`
-		Content string `form:"content" json:"content"`
+		Title   string `form:"title" json:"title" yaml:"title" binding:"Required"`
+		Content string `form:"content" json:"content" yaml:"content"`
 	}
 
 	// To be used as a nested struct (with a required field)
 	Person struct {
-		Name  string `form:"name" json:"name" binding:"Required"`
-		Email string `form:"email" json:"email"`
+		Name  string `form:"name" json:"name" yaml:"name" binding:"Required"`
+		Email string `form:"email" json:"email" yaml:"email"`
 	}
 
 	// For advanced test cases: multiple values, embedded
@@ -42,11 +42,11 @@ type (
 	// and multiple file uploads
 	BlogPost struct {
 		Post
-		Id          int     `binding:"Required"` // JSON not specified here for test coverage
-		Ignored     string  `form:"-" json:"-"`
-		Ratings     []int   `form:"rating" json:"ratings"`
-		Author      Person  `json:"author"`
-		Coauthor    *Person `json:"coauthor"`
+		Id          int     `binding:"Required"` // JSON and YAML not specified here for test coverage
+		Ignored     string  `form:"-" json:"-" yaml:"-"`
+		Ratings     []int   `form:"rating" json:"ratings" yaml:"ratings"`
+		Author      Person  `json:"author" yaml:"author"`
+		Coauthor    *Person `json:"coauthor" yaml:"coauthor"`
 		HeaderImage *multipart.FileHeader
 		Pictures    []*multipart.FileHeader `form:"picture"`
 		unexported  string                  `form:"unexported"` //nolint
@@ -79,8 +79,8 @@ type (
 	}
 
 	Group struct {
-		Name   string   `json:"name" binding:"Required"`
-		People []Person `json:"people" binding:"MinSize(1)"`
+		Name   string   `json:"name" yaml:"name" binding:"Required"`
+		People []Person `json:"people" yaml:"people" binding:"MinSize(1)"`
 	}
 
 	UrlForm struct {
